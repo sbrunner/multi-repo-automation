@@ -1,0 +1,104 @@
+name: Continuous integration
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+    tags:
+      - '*'
+
+env:
+  HAS_SECRETS: ${{ secrets.HAS_SECRETS }}
+  PYTHON_KEYRING_BACKEND: keyring.backends.null.Keyring
+
+jobs:
+  pre-commit:
+    name: Pre commit
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    if: "!startsWith(github.event.head_commit.message, '[skip ci] ')"
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: GitHub event
+        run: echo ${GITHUB_EVENT} | python3 -m json.tool
+        env:
+          GITHUB_EVENT: ${{ toJson(github) }}
+
+      - run: echo "${HOME}/.local/bin" >> ${GITHUB_PATH}
+      - run: pip install --user --requirement=ci/requirements-pre-commit.txt
+      - run: pip install --user --editable=.
+
+      - uses: actions/cache@v3
+        with:
+          path: ~/.cache/pre-commit
+          key: pre-commit-${{ hashFiles('.pre-commit-config.yaml') }}
+          restore-keys: |
+            pre-commit-${{ hashFiles('.pre-commit-config.yaml') }}
+            pre-commit-
+      - run: pre-commit run --all-files
+
+  build:
+    name: Run tests
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+    needs: pre-commit
+
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version:
+          - '3.8'
+          - '3.9'
+          - '3.10'
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - run: echo "${HOME}/.local/bin" >> ${GITHUB_PATH}
+      - run: pip install --requirement=requirements.txt
+
+      - run: poetry install
+      - name: Versions
+        run: |
+          poetry --version
+          python --version
+          poetry run python --version
+          [ "$(python3 --version)" == "$(poetry run python --version)" ]
+
+      - run: poetry run pytest --verbose --color=yes tests
+      - run: poetry run prospector --output=pylint --die-on-tool-error
+
+  publish:
+    name: Publish
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+    if: "!startsWith(github.event.head_commit.message, '[skip ci] ')"
+    needs: build
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - run: echo "${HOME}/.local/bin" >> ${GITHUB_PATH}
+      - run: python3 -m pip install --requirement=ci/requirements.txt
+
+      - name: Init pypi
+        run: |
+          echo "[pypi]" > ~/.pypirc
+          echo "username = ${{ secrets.PYPI_USERNAME }}" >> ~/.pypirc
+          echo "password = ${{ secrets.PYPI_PASSWORD }}" >> ~/.pypirc
+          python3 -m pip install --user wheel twine
+        if: env.HAS_SECRETS == 'HAS_SECRETS'
+      - name: Publish
+        run: c2cciutils-publish
+        if: env.HAS_SECRETS == 'HAS_SECRETS'
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.TOKEN }}
