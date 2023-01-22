@@ -1,12 +1,13 @@
 import io
 import os
 import re
+import shlex
 import shutil
 import subprocess
 import sys
 import tempfile
-from typing import Any, Dict, Iterator, List, Optional, Tuple, TypedDict, Callable
-import shlex
+from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple, TypedDict
+
 import requests
 import ruamel
 import yaml
@@ -41,7 +42,7 @@ def run(cmd: List[str], **kwargs: Any) -> subprocess.CompletedProcess:
     sys.stdout.flush()
     if "check" not in kwargs:
         kwargs["check"] = True
-    return subprocess.run(cmd, **kwargs) # pylint: disable=subprocess-run-check
+    return subprocess.run(cmd, **kwargs)  # pylint: disable=subprocess-run-check
 
 
 class Repo(TypedDict, total=False):
@@ -53,6 +54,7 @@ class Repo(TypedDict, total=False):
     master_branch: Optional[str]
     stabilization_branches: Optional[List[str]]
     folders_to_clean: Optional[List[str]]
+
 
 class Cwd:
     def __init__(self, repo: Repo) -> None:
@@ -434,7 +436,6 @@ def verify_type(repo: Repo) -> List[str]:
         return []
 
 
-
 def git_grep(text: str, args: List[str] = []) -> None:
     proc = run(["git", "grep", *args, "--", text], stdout=subprocess.PIPE, encoding="utf-8")
     files = set()
@@ -486,12 +487,10 @@ def update_stabilization_branches(repo: Repo) -> List[str]:
             pass
 
 
-
-def do_on_base_branches(repo: Repo, branch_prefix:str , func: Callable[[Repo], None]) -> List[str]:
+def do_on_base_branches(repo: Repo, branch_prefix: str, func: Callable[[Repo], None]) -> List[str]:
     result = set()
     branches = [*repo.get("stabilization_branches", []), repo.get("master_branch", "master")]
     for branch in branches:
-
 
         create_branch = CreateBranch(
             repo,

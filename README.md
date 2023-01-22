@@ -1,7 +1,9 @@
 # Multi repo automation
 
 ## Config
-Create a file with somthing like this:
+
+Create a file with something like this:
+
 ```yaml
 - dir: /home/user/src/myrepo
   name: user/myrepo
@@ -24,7 +26,8 @@ if mra.git_grep(file, r"\<text\>"]):
 mra.edit("file")
 ```
 
-##To do something on all repo that not depends on the branch:
+## To do something on all repo that not depends on the branch:
+
 ```python
 
 def _main() -> None:
@@ -85,7 +88,7 @@ def _do(repo: mra.Repo) -> List[str]:
     create_branch = mra.CreateBranch(
         repo,
         "branch_name",
-        "Commit/Pullrequest message",
+        "Commit/Pull request message",
     )
     with create_branch:
         # Do something
@@ -150,11 +153,12 @@ def _main() -> None:
 if __name__ == '__main__':
   _main()
 
+
 def _do(repo: mra.Repo) -> List[str]:
     create_branch = mra.CreateBranch(
         repo,
         "branch_name",
-        "Commit/Pullrequest message",
+        "Commit/Pull request message",
     )
     with create_branch:
         # Do something
@@ -165,4 +169,4 @@ def _do(repo: mra.Repo) -> List[str]:
         else:
             return [f"https://github.com/{repo['name']}/pulls"]
   return []
-  ```
+```
