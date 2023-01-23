@@ -54,6 +54,7 @@ class Repo(TypedDict, total=False):
     master_branch: Optional[str]
     stabilization_branches: Optional[List[str]]
     folders_to_clean: Optional[List[str]]
+    clean: bool
 
 
 class Cwd:
@@ -114,17 +115,16 @@ class CreateBranch:
             ],
             check=True,
         )
-        if self.repo["name"] != "camptocamp/c2cciutils":
-            run(["git", "clean", "-dfX"])
         for folder in self.repo.get("folders_to_clean", []):
             shutil.rmtree(folder, ignore_errors=True)
-        if self.repo["name"] == "camptocamp/c2cciutils":
-            proc = run(["git", "stash"], stdout=subprocess.PIPE, encoding="utf-8", env={}, check=True)
-            self.has_stashed = proc.stdout.strip() != "No local changes to save"
-        else:
+        if self.repo.get("clean", True):
+            run(["git", "clean", "-dfX"])
             proc = run(
                 ["git", "stash", "--all"], stdout=subprocess.PIPE, encoding="utf-8", env={}, check=True
             )
+            self.has_stashed = proc.stdout.strip() != "No local changes to save"
+        else:
+            proc = run(["git", "stash"], stdout=subprocess.PIPE, encoding="utf-8", env={}, check=True)
             self.has_stashed = proc.stdout.strip() != "No local changes to save"
         run(["git", "fetch"], check=True)
         run(["git", "reset", "--hard", f"origin/{self.base_branch}"], check=True)
@@ -252,14 +252,13 @@ class Branch:
             ],
             check=True,
         )
-        if self.repo["name"] != "camptocamp/c2cciutils":
-            run(["git", "clean", "-dfX"])
         for folder in self.repo.get("folders_to_clean", []):
             shutil.rmtree(folder, ignore_errors=True)
-        if self.repo["name"] == "camptocamp/c2cciutils":
-            self.has_stashed = run(["git", "stash"]).returncode == 0
-        else:
+        if self.repo.get("clean", True):
+            run(["git", "clean", "-dfX"])
             self.has_stashed = run(["git", "stash", "--all"]).returncode == 0
+        else:
+            self.has_stashed = run(["git", "stash"]).returncode == 0
 
         if self.old_branch_name != self.branch_name:
             run(["git", "branch", "--delete", "--force", self.branch_name])
@@ -334,15 +333,6 @@ class EditYAML:
             if new_data != self.original_data:
                 with open(self.filename, "w", encoding="utf-8") as f:
                     f.write(new_data)
-
-                # run(
-                #     [
-                #         "/home/sbrunner/workspace/c2cciutils/c2cciutils/node_modules/.bin/prettier",
-                #         "--write",
-                #         self.filename,
-                #     ]
-                # )
-                # run(["c2cciutils-checks", "--fix", "--check=prettier"])
 
     def __getitem__(self, key: str) -> Any:
         return self.data[key]
