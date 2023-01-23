@@ -28,7 +28,7 @@ if mra.git_grep(file, r"\<text\>"]):
 mra.edit("file")
 ```
 
-## To do something on all repo that not depends on the branch:
+## To do something on all repo that not depends on the branch
 
 ```python
 #!/usr/bin/env python3
@@ -60,7 +60,7 @@ if __name__ == '__main__':
   _main()
 ```
 
-## To update all the master branches write a script like:
+## To update all the master branches write a script like
 
 ```python
 #!/usr/bin/env python3
