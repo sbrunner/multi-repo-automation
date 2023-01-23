@@ -17,7 +17,7 @@ from ruamel.yaml import YAML
 
 def all_filenames(repo):
     return (
-        run(["git", "ls-files"], cwd=repo["dir"], check=True, stdout=subprocess.PIPE, encoding="utf-8")
+        run(["git", "ls-files"], cwd=repo["dir"], stdout=subprocess.PIPE, encoding="utf-8")
         .stdout.strip()
         .split("\n")
     )
@@ -92,7 +92,6 @@ class CreateBranch:
         self.old_branch_name = (
             run(
                 ["git", "rev-parse", "--abbrev-ref", "HEAD"],
-                check=True,
                 stdout=subprocess.PIPE,
             )
             .stdout.decode()
@@ -108,26 +107,23 @@ class CreateBranch:
                 f"--volume={os.getcwd()}:/src",
                 "sbrunner/vim",
                 "chown",
-                f"{run(['id', '-u'], check=True, stdout=subprocess.PIPE).stdout.decode().strip()}:"
-                f"{run(['id', '-g'], check=True, stdout=subprocess.PIPE).stdout.decode().strip()}",
+                f"{run(['id', '-u'], stdout=subprocess.PIPE).stdout.decode().strip()}:"
+                f"{run(['id', '-g'], stdout=subprocess.PIPE).stdout.decode().strip()}",
                 "-R",
                 ".",
             ],
-            check=True,
         )
         for folder in self.repo.get("folders_to_clean", []):
             shutil.rmtree(folder, ignore_errors=True)
         if self.repo.get("clean", True):
             run(["git", "clean", "-dfX"])
-            proc = run(
-                ["git", "stash", "--all"], stdout=subprocess.PIPE, encoding="utf-8", env={}, check=True
-            )
+            proc = run(["git", "stash", "--all"], stdout=subprocess.PIPE, encoding="utf-8", env={})
             self.has_stashed = proc.stdout.strip() != "No local changes to save"
         else:
-            proc = run(["git", "stash"], stdout=subprocess.PIPE, encoding="utf-8", env={}, check=True)
+            proc = run(["git", "stash"], stdout=subprocess.PIPE, encoding="utf-8", env={})
             self.has_stashed = proc.stdout.strip() != "No local changes to save"
-        run(["git", "fetch"], check=True)
-        run(["git", "reset", "--hard", f"origin/{self.base_branch}"], check=True)
+        run(["git", "fetch"])
+        run(["git", "reset", "--hard", f"origin/{self.base_branch}"])
         if self.new_branch_name == self.old_branch_name:
             run(["git", "reset", "--hard", "origin", self.new_branch_name])
         else:
@@ -140,7 +136,6 @@ class CreateBranch:
                     self.new_branch_name,
                     f"origin/{self.base_branch}",
                 ],
-                check=True,
             )
         run(["git", "status"])
 
@@ -156,13 +151,10 @@ class CreateBranch:
                 body=self.pr_body,
             )
         if self.new_branch_name != self.old_branch_name:
-            run(
-                ["git", "checkout", self.old_branch_name],
-                check=True,
-            )
+            run(["git", "checkout", self.old_branch_name])
         if self.has_stashed:
-            if run(["git", "stash", "pop"]).returncode != 0:
-                run(["git", "reset", "--hard"], check=True)
+            if run(["git", "stash", "pop"], check=False).returncode != 0:
+                run(["git", "reset", "--hard"])
 
 
 def create_pull_request(
@@ -174,8 +166,8 @@ def create_pull_request(
     force: bool = True,
     base_branch: Optional[str] = None,
 ) -> Tuple[bool, str]:
-    run(["git", "status", "--short"], check=True)
-    if not run(["git", "status", "--short"], check=True, stdout=subprocess.PIPE).stdout.strip():
+    run(["git", "status", "--short"])
+    if not run(["git", "status", "--short"], stdout=subprocess.PIPE).stdout.strip():
         return False, ""
     if base_branch is None:
         base_branch = repo.get("master_branch", "master")
@@ -188,16 +180,16 @@ def create_pull_request(
         f"--base={base_branch}",
     ]
     if commit:
-        run(["git", "add", "--all"], check=True)
+        run(["git", "add", "--all"])
         assert title is not None
         with tempfile.NamedTemporaryFile() as message_file:
             message_file.write(f"{title}\n".encode())
             if body is not None:
                 message_file.write(f"\n{body}\n".encode())
             message_file.flush()
-            if run(["git", "commit", f"--file={message_file.name}"]).returncode != 0:
-                run(["git", "add", "--all"], check=True)
-                run(["git", "commit", "--no-verify", f"--file={message_file.name}"], check=True)
+            if run(["git", "commit", f"--file={message_file.name}"], check=False).returncode != 0:
+                run(["git", "add", "--all"])
+                run(["git", "commit", "--no-verify", f"--file={message_file.name}"])
 
     if title is not None:
         cmd.extend(["--title", title])
@@ -206,9 +198,9 @@ def create_pull_request(
         cmd.append("--fill")
 
     if force:
-        run(["git", "push", "--force"], check=True)
+        run(["git", "push", "--force"])
     else:
-        run(["git", "push"], check=True)
+        run(["git", "push"])
 
     url = run(cmd, stdout=subprocess.PIPE).stdout.decode().strip()
     if not url:
@@ -229,7 +221,6 @@ class Branch:
         self.old_branch_name = (
             run(
                 ["git", "rev-parse", "--abbrev-ref", "HEAD"],
-                check=True,
                 stdout=subprocess.PIPE,
             )
             .stdout.decode()
@@ -245,44 +236,42 @@ class Branch:
                 f"--volume={os.getcwd()}:/src",
                 "sbrunner/vim",
                 "chown",
-                f"{run(['id', '-u'], check=True, stdout=subprocess.PIPE).stdout.decode().strip()}:"
-                f"{run(['id', '-g'], check=True, stdout=subprocess.PIPE).stdout.decode().strip()}",
+                f"{run(['id', '-u'], stdout=subprocess.PIPE).stdout.decode().strip()}:"
+                f"{run(['id', '-g'], stdout=subprocess.PIPE).stdout.decode().strip()}",
                 "-R",
                 ".",
             ],
-            check=True,
         )
         for folder in self.repo.get("folders_to_clean", []):
             shutil.rmtree(folder, ignore_errors=True)
         if self.repo.get("clean", True):
             run(["git", "clean", "-dfX"])
-            self.has_stashed = run(["git", "stash", "--all"]).returncode == 0
+            self.has_stashed = run(["git", "stash", "--all"], check=False).returncode == 0
         else:
-            self.has_stashed = run(["git", "stash"]).returncode == 0
+            self.has_stashed = run(["git", "stash"], check=False).returncode == 0
 
         if self.old_branch_name != self.branch_name:
             run(["git", "branch", "--delete", "--force", self.branch_name])
             run(
                 ["git", "checkout", "-b", self.branch_name, "--track", f"origin/{self.branch_name}"],
-                check=True,
             )
         else:
-            run(["git", "pull", "--rebase"], check=True)
+            run(["git", "pull", "--rebase"])
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         del exc_val, exc_tb
 
         if exc_type is None and self.push:
             if self.force:
-                run(["git", "push", "--force"], check=True)
+                run(["git", "push", "--force"])
             else:
-                run(["git", "push"], check=True)
+                run(["git", "push"])
 
         if self.branch_name != self.old_branch_name:
             run(["git", "checkout", self.old_branch_name])
         if self.has_stashed:
-            if run(["git", "stash", "pop"]).returncode != 0:
-                run(["git", "reset", "--hard"], check=True)
+            if run(["git", "stash", "pop"], check=False).returncode != 0:
+                run(["git", "reset", "--hard"])
 
 
 class Commit:
@@ -297,15 +286,15 @@ class Commit:
 
         if exc_type is None:
 
-            if not run(["git", "status", "--short"], check=True, stdout=subprocess.PIPE).stdout.strip():
+            if not run(["git", "status", "--short"], stdout=subprocess.PIPE).stdout.strip():
                 return
-            run(["git", "add", "--all"], check=True)
+            run(["git", "add", "--all"])
             with tempfile.NamedTemporaryFile() as message_file:
                 message_file.write(f"{self.commit_message}\n".encode())
                 message_file.flush()
-                if run(["git", "commit", f"--file={message_file.name}"]).returncode != 0:
-                    run(["git", "add", "--all"], check=True)
-                    run(["git", "commit", "--no-verify", f"--file={message_file.name}"], check=True)
+                if run(["git", "commit", f"--file={message_file.name}"], check=False).returncode != 0:
+                    run(["git", "add", "--all"])
+                    run(["git", "commit", "--no-verify", f"--file={message_file.name}"])
 
 
 class EditYAML:
@@ -447,7 +436,7 @@ def replace(file: str, search: str, replace: str) -> None:
 def edit(repo: Repo, files: List[str]) -> None:
     for file in files:
         print(f"{repo['dir']}/{file}")
-        run(["code", f"{repo['dir']}/{file}"], check=True)
+        run(["code", f"{repo['dir']}/{file}"])
         print("Press enter to continue")
         input()
 
