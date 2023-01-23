@@ -16,6 +16,8 @@ Create a file with something like this:
 ## Utilities
 
 ```python
+import multi_repo_automation as mra
+
 # Test if a file exists
 if mra.run(["git", "ls-files", "**/*.txt"], stdout=subprocess.PIPE).stdout.strip() != b"":
   print("Found")
@@ -29,6 +31,9 @@ mra.edit("file")
 ## To do something on all repo that not depends on the branch:
 
 ```python
+#!/usr/bin/env python3
+import argparse
+import multi_repo_automation as mra
 
 def _main() -> None:
     with open(os.path.join(os.path.dirname(__file__), "repo.yaml"), encoding="utf-8") as f:
@@ -58,7 +63,9 @@ if __name__ == '__main__':
 ## To update all the master branches write a script like:
 
 ```python
-
+#!/usr/bin/env python3
+import argparse
+import multi_repo_automation as mra
 
 def _main() -> None:
     with open(os.path.join(os.path.dirname(__file__), "repo.yaml"), encoding="utf-8") as f:
@@ -105,28 +112,8 @@ def _do(repo: mra.Repo) -> List[str]:
 
 ```python
 #!/usr/bin/env python3
-
 import argparse
-import io
-import os
-import re
-import shutil
-import subprocess
-import sys
-import tempfile
-from typing import Any, Dict, Iterator, List, Optional, Tuple, TypedDict
-import shlex
-import c2cciutils.security
-import requests
-import ruamel
-import toml
-import yaml
-from identify import identify
-from ruamel.yaml import YAML
 import multi_repo_automation as mra
-
-
-
 
 def _main() -> None:
     with open(os.path.join(os.path.dirname(__file__), "repo.yaml"), encoding="utf-8") as f:
@@ -152,7 +139,6 @@ def _main() -> None:
 
 if __name__ == '__main__':
   _main()
-
 
 def _do(repo: mra.Repo) -> List[str]:
     create_branch = mra.CreateBranch(
