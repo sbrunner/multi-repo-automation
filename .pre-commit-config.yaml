@@ -37,6 +37,9 @@ repos:
     rev: v1.5.1
     hooks:
       - id: docformatter
+        args:
+          - --in-place
+          - --pre-summary-newline
   # - repo: https://github.com/PyCQA/prospector
   #   rev: v1.8.4
   #   hooks:

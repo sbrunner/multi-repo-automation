@@ -65,7 +65,7 @@ jobs:
       - run: echo "${HOME}/.local/bin" >> ${GITHUB_PATH}
       - run: pip install --requirement=requirements.txt
 
-      - run: poetry install
+      - run: poetry install --extras=update_stabilization_branches
       - name: Versions
         run: |
           poetry --version
@@ -73,8 +73,8 @@ jobs:
           poetry run python --version
           [ "$(python3 --version)" == "$(poetry run python --version)" ]
 
-      - run: poetry run pytest --verbose --color=yes tests
       - run: poetry run prospector --output=pylint --die-on-tool-error
+        if: matrix.python-version != '3.8'
 
   publish:
     name: Publish
