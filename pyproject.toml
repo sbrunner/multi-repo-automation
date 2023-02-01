@@ -41,7 +41,7 @@ python = ">=3.8,<4.0"
 PyYAML = "6.0"
 requests = "2.28.2"
 "ruamel.yaml" = "0.17.21"
-identify = "2.5.13"
+identify = "2.5.17"
 c2cciutils = { version = "1.4.7", optional = true }
 
 [tool.poetry.extras]
