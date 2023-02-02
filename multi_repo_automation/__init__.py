@@ -374,7 +374,6 @@ class Commit:
         del exc_val, exc_tb
 
         if exc_type is None:
-
             if not run(["git", "status", "--short"], stdout=subprocess.PIPE).stdout.strip():
                 return False
             run(["git", "add", "--all"])
@@ -541,7 +540,6 @@ def do_on_base_branches(repo: Repo, branch_prefix: str, func: Callable[[Repo], N
     result = set()
     branches = [*(repo.get("stabilization_branches") or []), repo.get("master_branch", "master")]
     for branch in branches:
-
         create_branch = CreateBranch(
             repo,
             f"{branch_prefix}-{branch}",
