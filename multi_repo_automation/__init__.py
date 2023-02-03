@@ -1,5 +1,6 @@
 """Tools to automated changes on multiple repositories."""
 
+import argparse
 import io
 import os
 import re
@@ -25,6 +26,7 @@ from typing import (
 
 import identify.identify as identify_
 import requests
+import yaml
 from ruamel.yaml import YAML
 
 
@@ -33,9 +35,9 @@ class Repo(TypedDict, total=False):
 
     dir: str
     name: str
-    master_branch: Optional[str]
-    stabilization_branches: Optional[List[str]]
-    folders_to_clean: Optional[List[str]]
+    master_branch: str
+    stabilization_branches: List[str]
+    folders_to_clean: List[str]
     clean: bool
 
 
@@ -177,10 +179,10 @@ class CreateBranch:
             proc = run(["git", "stash"], stdout=subprocess.PIPE, encoding="utf-8", env={})
             self.has_stashed = proc.stdout.strip() != "No local changes to save"
         run(["git", "fetch"])
-        run(["git", "reset", "--hard", f"origin/{self.base_branch}"])
+        run(["git", "reset", "--hard", f"origin/{self.base_branch}", "--"])
         run(["git", "checkout", self.repo.get("master_branch") or "master"])
         if self.new_branch_name == self.old_branch_name:
-            run(["git", "reset", "--hard", "origin", self.new_branch_name])
+            run(["git", "reset", "--hard", f"origin/{self.new_branch_name}", "--"])
         else:
             run(["git", "branch", "--delete", "--force", self.new_branch_name], check=False)
             run(
@@ -212,7 +214,7 @@ class CreateBranch:
                 body=self.pr_body,
             )
         if self.new_branch_name != self.old_branch_name:
-            run(["git", "checkout", self.old_branch_name])
+            run(["git", "checkout", self.old_branch_name, "--"])
         if self.has_stashed:
             if run(["git", "stash", "pop"], check=False).returncode != 0:
                 run(["git", "reset", "--hard"])
@@ -271,7 +273,6 @@ def create_pull_request(
         url = f"https://github.com/{repo['name']}/pulls"
     elif re.match(r"https://github.com/camptocamp/tilecloud/pull/[0-9]+", url):
         url = f"{url}/tiles"
-    run(["/home/sbrunner/bin/firefox/firefox", url])
     return True, url
 
 
@@ -386,6 +387,38 @@ class Commit:
         return False
 
 
+class Edit:
+    r"""
+    Edit a file.
+
+    Usage:
+
+    ```python
+    with Edit("file.txt") as file:
+        file.content = "Header\n" + file.content
+    ```
+    """
+
+    def __init__(self, filename: str) -> None:
+        """Initialize."""
+        self.filename = filename
+        with open(".github/renovate.json5", encoding="utf-8") as opened_file:
+            self.content = opened_file.read()
+
+    def __enter__(self) -> "Edit":
+        return self
+
+    def __exit__(
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[TracebackType],
+    ) -> Literal[False]:
+        with open(".github/renovate.json5", "w", encoding="utf-8") as opened_file:
+            opened_file.write(self.content)
+            return False
+
+
 class EditYAML:
     """
     Edit a YAML file by keeping the comments, in a with instruction.
@@ -498,9 +531,14 @@ def edit(repo: Repo, files: List[str]) -> None:
     """Edit the files in VSCode."""
     for file in files:
         print(f"{repo['dir']}/{file}")
+        with open(f"{repo['dir']}/{file}", "a", encoding="utf-8"):
+            pass
         run(["code", f"{repo['dir']}/{file}"])
         print("Press enter to continue")
         input()
+        # Remove the file if he is empty
+        if os.stat(f"{repo['dir']}/{file}").st_size == 0:
+            os.remove(f"{repo['dir']}/{file}")
 
 
 def update_stabilization_branches(repo: Repo) -> None:
@@ -535,7 +573,9 @@ def update_stabilization_branches(repo: Repo) -> None:
             pass
 
 
-def do_on_base_branches(repo: Repo, branch_prefix: str, func: Callable[[Repo], None]) -> List[str]:
+def do_on_base_branches(
+    repo: Repo, branch_prefix: str, func: Callable[[Repo], Optional[List[str]]]
+) -> List[str]:
     """Do the func action on all the base branches of the repo."""
     result = set()
     branches = [*(repo.get("stabilization_branches") or []), repo.get("master_branch", "master")]
@@ -555,3 +595,162 @@ def do_on_base_branches(repo: Repo, branch_prefix: str, func: Callable[[Repo], N
                 result.add(f"https://github.com/{repo['name']}/pulls")
 
     return list(result)
+
+
+class App:
+    """
+    Class that's help to create an application.
+
+    To apply the conversion on all the repositories.
+    """
+
+    do_pr = False
+    do_pr_on_stabilization_branches = False
+    branch_prefix: Optional[str] = None
+    args: Any = None
+    kwargs: Any = None
+    local = False
+    one = False
+
+    def __init__(self, repos: List[Repo], action: Callable[[], None], browser: str = "firefox") -> None:
+        self.repos = repos
+        self.action = action
+        self.browser = browser
+
+    def init_pr(self, *args, **kwargs):
+        """
+        Configure to do create an pull request.
+
+        On the master branch od all the repositories.
+        """
+        self.do_pr = True
+        self.args = args
+        self.kwargs = kwargs
+
+    def init_pr_on_stabilization_branches(self, branch_prefix: str, *args, **kwargs):
+        """
+        Configure to do create an pull request.
+
+        On all the stabilization branches of all the repositories.
+        """
+        self.do_pr = True
+        self.do_pr_on_stabilization_branches = True
+        self.branch_prefix = branch_prefix
+        self.args = args
+        self.kwargs = kwargs
+
+    def run(self) -> None:
+        """Run the conversion."""
+        if self.local:
+            self.action()
+            return
+        url_to_open = []
+        try:
+            for repo in self.repos:
+                try:
+                    print(f"=== {repo['name']} ===")
+                    with Cwd(repo):
+                        if self.do_pr:
+                            base_branches: List[str] = (
+                                repo.get("stabilization_branches", [repo.get("master_branch", "master")])
+                                if self.do_pr_on_stabilization_branches
+                                else [repo.get("master_branch", "master")]
+                            )
+                            for base_branch in base_branches:
+                                self.kwargs["base_branch"] = base_branch
+                                if self.do_pr_on_stabilization_branches:
+                                    self.kwargs["branch"] = f"{self.branch_prefix}-{base_branch}"
+                                create_branch = CreateBranch(repo, *self.args, **self.kwargs)
+                                with create_branch:
+                                    self.action()
+                                if create_branch.pull_request_created:
+                                    if create_branch.message:
+                                        url_to_open.append(create_branch.message)
+                                    else:
+                                        url_to_open.append(f"https://github.com/{repo['name']}/pulls")
+                                    if self.one:
+                                        return
+                        else:
+                            self.action()
+                            if self.one:
+                                return
+                finally:
+                    print(f"=== {repo['name']} ===")
+        finally:
+            print(f"{len(url_to_open)} pull request created")
+            for url in url_to_open:
+                run([self.browser, url])
+            for url in url_to_open:
+                print(url)
+
+
+def main(
+    action: Optional[Callable[[], None]] = None,
+    repos_filename: str = "repos.yaml",
+    browser: str = "firefox",
+    description: str = "Apply an action on all the repos.",
+    config: Optional[Dict[str, str]] = None,
+) -> None:
+    """Apply an action on all the repos."""
+    args_parser = argparse.ArgumentParser(description=description)
+    args_parser.add_argument("--org", help="The organization to use.")
+    args_parser.add_argument("--one", action="store_true", help="Open only one pull request.")
+    args_parser.add_argument(
+        "--local", action="store_true", help="Run the action locally, don't do any git operations."
+    )
+    args_parser.add_argument(
+        "--repos", default=repos_filename, help="A YAML file that contains the repositories."
+    )
+    args_parser.add_argument(
+        "--browser", default=browser, help="The browser used to open the created pull requests"
+    )
+    if config is None:
+        args_parser.add_argument("--pull-request-branch", help="The pull request branch.")
+        args_parser.add_argument("--pull-request-title", help="The pull request title.")
+        args_parser.add_argument("--pull-request-body", help="The pull request body.")
+        args_parser.add_argument(
+            "--pull-request-on-stabilization-branches",
+            action="store_true",
+            help="To a pull request on all the stabilization branches.",
+        )
+        args_parser.add_argument("--pull-request-branch-prefix", help="The pull request branch prefix.")
+    if action is None:
+        args_parser.add_argument("command", help="The command to run.")
+    args = args_parser.parse_args()
+
+    if config is None:
+        pull_request_on_stabilization_branches = args.pull_request_on_stabilization_branches
+        pull_request_title = args.pull_request_title
+        pull_request_body = args.pull_request_body
+        pull_request_branch = args.pull_request_branch
+        pull_request_branch_prefix = args.pull_request_branch_prefix
+    else:
+        pull_request_on_stabilization_branches = config.get("pull_request_on_stabilization_branches", False)
+        pull_request_title = config.get("pull_request_title", None)
+        pull_request_body = config.get("pull_request_body", None)
+        pull_request_branch = config.get("pull_request_branch", None)
+        pull_request_branch_prefix = config.get("pull_request_branch_prefix", None)
+
+    with open(args.repos, encoding="utf-8") as opened_file:
+        repos = yaml.load(opened_file.read(), Loader=yaml.SafeLoader)
+
+    if action is None:
+
+        def action() -> List[str]:
+            run([args.command])
+
+    app = App(repos, action, browser=args.browser)
+    app.one = args.one
+    if args.local:
+        app.local = True
+    elif pull_request_on_stabilization_branches:
+        app.init_pr_on_stabilization_branches(
+            pull_request_branch_prefix, pull_request_title, pull_request_body
+        )
+    elif pull_request_branch:
+        app.init_pr(pull_request_branch, pull_request_title, pull_request_body)
+    app.run()
+
+
+if __name__ == "__main__":
+    main()
