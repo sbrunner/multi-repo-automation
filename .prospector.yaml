@@ -8,6 +8,7 @@ pylint:
     - too-many-statements
     - too-many-locals
     - too-many-instance-attributes
+    - too-many-branches
     - trailing-whitespace
 
 pycodestyle:
@@ -22,7 +23,9 @@ pycodestyle:
 
 pydocstyle:
   disable:
-    - D102 # missing docstring in public method
+    - D102 # Missing docstring in public method, duplicate with PyLint
+    - D105 # Missing docstring in magic method
+    - D107 # Missing docstring in __init__
     - D200 # one-line docstring should fit on one line with quotes
     - D202 # no blank lines after function docstring
     - D203 # 1 blank line required before class docstring
