@@ -24,9 +24,9 @@ from typing import (
     TypedDict,
 )
 
-import identify.identify as identify_
 import requests
 import yaml
+from identify import identify
 from ruamel.yaml import YAML
 
 
@@ -41,29 +41,32 @@ class Repo(TypedDict, total=False):
     clean: bool
 
 
-def all_filenames(repo: Repo) -> List[str]:
+def all_filenames(repo: Optional[Repo] = None) -> List[str]:
     """Get all the filenames of the repository."""
-    return (
-        run(["git", "ls-files"], cwd=repo["dir"], stdout=subprocess.PIPE, encoding="utf-8")
-        .stdout.strip()
-        .split("\n")
+    cmd = ["git", "ls-files"]
+    result = (
+        run(cmd, stdout=subprocess.PIPE)
+        if repo is None
+        else run(cmd, cwd=repo["dir"], stdout=subprocess.PIPE)
     )
+    return result.stdout.strip().split("\n")
 
 
-def identify_all(repo: Repo) -> Set[str]:
+def all_identify(repo: Optional[Repo] = None) -> Set[str]:
     """Get all the types of the repository."""
     result: Set[str] = set()
     for filename in all_filenames(repo):
-        result |= identify_.tags_from_path(filename)
+        result |= identify.tags_from_path(filename)
     return result
 
 
-def identify(repo: Repo, type_: str) -> bool:
+def all_filenames_identify(type_: str, repo: Optional[Repo] = None) -> List[str]:
     """Check if the repository contains a file of the given type."""
+    result = []
     for filename in all_filenames(repo):
-        if type_ in identify_.tags_from_path(filename):
-            return True
-    return False
+        if type_ in identify.tags_from_path(filename):
+            result.append(filename)
+    return result
 
 
 def run(cmd: List[str], **kwargs: Any) -> subprocess.CompletedProcess[str]:
@@ -402,7 +405,7 @@ class Edit:
     def __init__(self, filename: str) -> None:
         """Initialize."""
         self.filename = filename
-        with open(".github/renovate.json5", encoding="utf-8") as opened_file:
+        with open(self.filename, encoding="utf-8") as opened_file:
             self.content = opened_file.read()
 
     def __enter__(self) -> "Edit":
@@ -414,9 +417,12 @@ class Edit:
         exc_val: Optional[BaseException],
         exc_tb: Optional[TracebackType],
     ) -> Literal[False]:
-        with open(".github/renovate.json5", "w", encoding="utf-8") as opened_file:
+        with open(self.filename, "w", encoding="utf-8") as opened_file:
             opened_file.write(self.content)
-            return False
+
+        if os.path.exists(".pre-commit-config.yaml"):
+            run(["pre-commit", "run", "--files", self.filename], check=False)
+        return False
 
 
 class EditYAML:
@@ -431,13 +437,16 @@ class EditYAML:
 
     original_data: Optional[str]
 
-    def __init__(self, filename: str, width: int = 110, default_flow_style: bool = False):
+    def __init__(
+        self, filename: str, width: int = 110, default_flow_style: bool = False, force: bool = False
+    ):
         """Initialize the object."""
         self.filename = filename
         self.data: Dict[str, Any] = {}
         self.yaml = YAML()
         self.yaml.default_flow_style = default_flow_style
         self.yaml.width = width  # type: ignore
+        self.force = force
 
     def __enter__(self) -> "EditYAML":
         """Load the file."""
@@ -460,9 +469,11 @@ class EditYAML:
             out = io.StringIO()
             self.yaml.dump(self.data, out)
             new_data = out.getvalue()
-            if new_data != self.original_data:
+            if self.force or new_data != self.original_data:
                 with open(self.filename, "w", encoding="utf-8") as file_:
                     file_.write(new_data)
+                if os.path.exists(".pre-commit-config.yaml"):
+                    run(["pre-commit", "run", "--files", self.filename], check=False)
         return False
 
     def __getitem__(self, key: str) -> Any:
@@ -651,11 +662,10 @@ class App:
                     print(f"=== {repo['name']} ===")
                     with Cwd(repo):
                         if self.do_pr:
-                            base_branches: List[str] = (
-                                repo.get("stabilization_branches", [repo.get("master_branch", "master")])
-                                if self.do_pr_on_stabilization_branches
-                                else [repo.get("master_branch", "master")]
-                            )
+                            base_branches: Set[str] = {repo.get("master_branch", "master")}
+                            if self.do_pr_on_stabilization_branches:
+                                base_branches.update(repo.get("stabilization_branches") or [])
+
                             for base_branch in base_branches:
                                 self.kwargs["base_branch"] = base_branch
                                 if self.do_pr_on_stabilization_branches:
@@ -731,8 +741,10 @@ def main(
         pull_request_branch = config.get("pull_request_branch", None)
         pull_request_branch_prefix = config.get("pull_request_branch_prefix", None)
 
-    with open(args.repos, encoding="utf-8") as opened_file:
-        repos = yaml.load(opened_file.read(), Loader=yaml.SafeLoader)
+    repos = []
+    if not args.local:
+        with open(args.repos, encoding="utf-8") as opened_file:
+            repos = yaml.load(opened_file.read(), Loader=yaml.SafeLoader)
 
     if action is None:
 
