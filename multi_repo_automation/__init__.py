@@ -622,13 +622,14 @@ class App:
     kwargs: Any = None
     local = False
     one = False
+    repo_prefix: Optional[str] = None
 
     def __init__(self, repos: List[Repo], action: Callable[[], None], browser: str = "firefox") -> None:
         self.repos = repos
         self.action = action
         self.browser = browser
 
-    def init_pr(self, *args, **kwargs):
+    def init_pr(self, *args: Any, **kwargs: Any) -> None:
         """
         Configure to do create an pull request.
 
@@ -638,7 +639,7 @@ class App:
         self.args = args
         self.kwargs = kwargs
 
-    def init_pr_on_stabilization_branches(self, branch_prefix: str, *args, **kwargs):
+    def init_pr_on_stabilization_branches(self, branch_prefix: str, *args: Any, **kwargs: Any) -> None:
         """
         Configure to do create an pull request.
 
@@ -658,34 +659,35 @@ class App:
         url_to_open = []
         try:
             for repo in self.repos:
-                try:
-                    print(f"=== {repo['name']} ===")
-                    with Cwd(repo):
-                        if self.do_pr:
-                            base_branches: Set[str] = {repo.get("master_branch", "master")}
-                            if self.do_pr_on_stabilization_branches:
-                                base_branches.update(repo.get("stabilization_branches") or [])
-
-                            for base_branch in base_branches:
-                                self.kwargs["base_branch"] = base_branch
+                if self.repo_prefix is None or repo["name"].startswith(self.repo_prefix):
+                    try:
+                        print(f"=== {repo['name']} ===")
+                        with Cwd(repo):
+                            if self.do_pr:
+                                base_branches: Set[str] = {repo.get("master_branch", "master")}
                                 if self.do_pr_on_stabilization_branches:
-                                    self.kwargs["branch"] = f"{self.branch_prefix}-{base_branch}"
-                                create_branch = CreateBranch(repo, *self.args, **self.kwargs)
-                                with create_branch:
-                                    self.action()
-                                if create_branch.pull_request_created:
-                                    if create_branch.message:
-                                        url_to_open.append(create_branch.message)
-                                    else:
-                                        url_to_open.append(f"https://github.com/{repo['name']}/pulls")
-                                    if self.one:
-                                        return
-                        else:
-                            self.action()
-                            if self.one:
-                                return
-                finally:
-                    print(f"=== {repo['name']} ===")
+                                    base_branches.update(repo.get("stabilization_branches") or [])
+
+                                for base_branch in base_branches:
+                                    self.kwargs["base_branch"] = base_branch
+                                    if self.do_pr_on_stabilization_branches:
+                                        self.kwargs["branch"] = f"{self.branch_prefix}-{base_branch}"
+                                    create_branch = CreateBranch(repo, *self.args, **self.kwargs)
+                                    with create_branch:
+                                        self.action()
+                                    if create_branch.pull_request_created:
+                                        if create_branch.message:
+                                            url_to_open.append(create_branch.message)
+                                        else:
+                                            url_to_open.append(f"https://github.com/{repo['name']}/pulls")
+                                        if self.one:
+                                            return
+                            else:
+                                self.action()
+                                if self.one:
+                                    return
+                    finally:
+                        print(f"=== {repo['name']} ===")
         finally:
             print(f"{len(url_to_open)} pull request created")
             for url in url_to_open:
@@ -698,32 +700,41 @@ def main(
     action: Optional[Callable[[], None]] = None,
     repos_filename: str = "repos.yaml",
     browser: str = "firefox",
-    description: str = "Apply an action on all the repos.",
+    description: str = "Apply an action on all the pre-configured repositories.",
     config: Optional[Dict[str, str]] = None,
 ) -> None:
     """Apply an action on all the repos."""
     args_parser = argparse.ArgumentParser(description=description)
-    args_parser.add_argument("--org", help="The organization to use.")
-    args_parser.add_argument("--one", action="store_true", help="Open only one pull request.")
-    args_parser.add_argument(
-        "--local", action="store_true", help="Run the action locally, don't do any git operations."
+    args_parser_local = args_parser.add_argument_group("local", "To apply the action locally.")
+    args_parser_local.add_argument("--local", action="store_true", help="Enable it.")
+
+    args_parser_repos = args_parser.add_argument_group(
+        "repos", "Option used to browse all the repositories, and create pull request with the result."
     )
-    args_parser.add_argument(
-        "--repos", default=repos_filename, help="A YAML file that contains the repositories."
+    args_parser_repos.add_argument(
+        "--repositories", default=repos_filename, help="A YAML file that contains the repositories."
     )
-    args_parser.add_argument(
+    args_parser_repos.add_argument("--repository-prefix", help="Apply on repository with prefix.")
+    args_parser_repos.add_argument("--one", action="store_true", help="Open only one pull request.")
+    if config is None:
+        args_parser_repos.add_argument("--pull-request-title", help="The pull request title.")
+        args_parser_repos.add_argument("--pull-request-body", help="The pull request body.")
+        args_parser_master = args_parser.add_argument_group(
+            "master", "To apply the action on all master branches."
+        )
+        args_parser_master.add_argument("--branch", help="The created branch branch name.")
+        args_parser_stabilization = args_parser.add_argument_group(
+            "stabilization", "To apply the action on all stabilization (including master) branches."
+        )
+        args_parser_stabilization.add_argument(
+            "--on-stabilization-branches",
+            action="store_true",
+            help="Enable it.",
+        )
+        args_parser_stabilization.add_argument("--branch-prefix", help="The created branch prefix.")
+    args_parser_repos.add_argument(
         "--browser", default=browser, help="The browser used to open the created pull requests"
     )
-    if config is None:
-        args_parser.add_argument("--pull-request-branch", help="The pull request branch.")
-        args_parser.add_argument("--pull-request-title", help="The pull request title.")
-        args_parser.add_argument("--pull-request-body", help="The pull request body.")
-        args_parser.add_argument(
-            "--pull-request-on-stabilization-branches",
-            action="store_true",
-            help="To a pull request on all the stabilization branches.",
-        )
-        args_parser.add_argument("--pull-request-branch-prefix", help="The pull request branch prefix.")
     if action is None:
         args_parser.add_argument("command", help="The command to run.")
     args = args_parser.parse_args()
@@ -748,11 +759,12 @@ def main(
 
     if action is None:
 
-        def action() -> List[str]:
+        def action() -> None:
             run([args.command])
 
     app = App(repos, action, browser=args.browser)
     app.one = args.one
+    app.repo_prefix = args.repo_prefix
     if args.local:
         app.local = True
     elif pull_request_on_stabilization_branches:
