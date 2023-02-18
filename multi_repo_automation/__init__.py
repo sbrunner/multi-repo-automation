@@ -743,16 +743,16 @@ def main(
     args = args_parser.parse_args()
 
     if config is None:
-        pull_request_on_stabilization_branches = args.pull_request_on_stabilization_branches
+        pull_request_on_stabilization_branches = args.on_stabilization_branches
         pull_request_title = args.pull_request_title
         pull_request_body = args.pull_request_body
-        pull_request_branch = args.pull_request_branch
-        pull_request_branch_prefix = args.pull_request_branch_prefix
+        pull_request_branch = args.branch
+        pull_request_branch_prefix = args.branch_prefix
     else:
         pull_request_on_stabilization_branches = config.get("pull_request_on_stabilization_branches", False)
         pull_request_title = config.get("pull_request_title", None)
         pull_request_body = config.get("pull_request_body", None)
-        pull_request_branch = config.get("pull_request_branch", None)
+        pull_request_branch = config.get("branch", None)
         pull_request_branch_prefix = config.get("pull_request_branch_prefix", None)
 
     repos = []
