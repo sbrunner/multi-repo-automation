@@ -69,15 +69,19 @@ def all_filenames_identify(type_: str, repo: Optional[Repo] = None) -> List[str]
     return result
 
 
-def run(cmd: List[str], **kwargs: Any) -> subprocess.CompletedProcess[str]:
+def run(cmd: List[str], exit_on_error: bool = True, **kwargs: Any) -> subprocess.CompletedProcess[str]:
     """Run a command."""
     print(shlex.join(cmd))
     sys.stdout.flush()
-    if "check" not in kwargs:
-        kwargs["check"] = True
     if "stdout" in kwargs and kwargs["stdout"] == subprocess.PIPE and "encoding" not in kwargs:
         kwargs["encoding"] = "utf-8"
-    return subprocess.run(cmd, **kwargs)  # pylint: disable=subprocess-run-check # nosec
+    process = subprocess.run(cmd, **kwargs)  # pylint: disable=subprocess-run-check # nosec
+
+    if process.returncode != 0:
+        print(f"Error on running: {shlex.join(cmd)}")
+        if exit_on_error:
+            sys.exit(process.returncode)
+    return process
 
 
 class Cwd:
@@ -186,7 +190,7 @@ class CreateBranch:
         if self.new_branch_name == self.old_branch_name:
             run(["git", "reset", "--hard", f"origin/{self.new_branch_name}", "--"])
         else:
-            run(["git", "branch", "--delete", "--force", self.new_branch_name], check=False)
+            run(["git", "branch", "--delete", "--force", self.new_branch_name], False)
             run(
                 [
                     "git",
@@ -218,7 +222,7 @@ class CreateBranch:
         if self.new_branch_name != self.old_branch_name:
             run(["git", "checkout", self.old_branch_name, "--"])
         if self.has_stashed:
-            if run(["git", "stash", "pop"], check=False).returncode != 0:
+            if run(["git", "stash", "pop"], False).returncode != 0:
                 run(["git", "reset", "--hard"])
         return False
 
@@ -254,7 +258,7 @@ def create_pull_request(
             if body is not None:
                 message_file.write(f"\n{body}\n".encode())
             message_file.flush()
-            if run(["git", "commit", f"--file={message_file.name}"], check=False).returncode != 0:
+            if run(["git", "commit", f"--file={message_file.name}"], False).returncode != 0:
                 run(["git", "add", "--all"])
                 run(["git", "commit", "--no-verify", f"--file={message_file.name}"])
 
@@ -269,7 +273,7 @@ def create_pull_request(
     else:
         run(["git", "push"])
 
-    url_proc = run(cmd, stdout=subprocess.PIPE, check=False)
+    url_proc = run(cmd, False, stdout=subprocess.PIPE)
     url = url_proc.stdout.strip()
     if url_proc.returncode != 0 or not url:
         url = f"https://github.com/{repo['name']}/pulls"
@@ -317,12 +321,12 @@ class Branch:
             shutil.rmtree(folder, ignore_errors=True)
         if self.repo.get("clean", True):
             run(["git", "clean", "-dfX"])
-            self.has_stashed = run(["git", "stash", "--all"], check=False).returncode == 0
+            self.has_stashed = run(["git", "stash", "--all"], False).returncode == 0
         else:
-            self.has_stashed = run(["git", "stash"], check=False).returncode == 0
+            self.has_stashed = run(["git", "stash"], False).returncode == 0
 
         if self.old_branch_name != self.branch_name:
-            run(["git", "branch", "--delete", "--force", self.branch_name])
+            run(["git", "branch", "--delete", "--force", self.branch_name], False)
             run(
                 ["git", "checkout", "-b", self.branch_name, "--track", f"origin/{self.branch_name}"],
             )
@@ -347,7 +351,7 @@ class Branch:
         if self.branch_name != self.old_branch_name:
             run(["git", "checkout", self.old_branch_name])
         if self.has_stashed:
-            if run(["git", "stash", "pop"], check=False).returncode != 0:
+            if run(["git", "stash", "pop"], False).returncode != 0:
                 run(["git", "reset", "--hard"])
         return False
 
@@ -383,7 +387,7 @@ class Commit:
             with tempfile.NamedTemporaryFile() as message_file:
                 message_file.write(f"{self.commit_message}\n".encode())
                 message_file.flush()
-                if run(["git", "commit", f"--file={message_file.name}"], check=False).returncode != 0:
+                if run(["git", "commit", f"--file={message_file.name}"], False).returncode != 0:
                     run(["git", "add", "--all"])
                     run(["git", "commit", "--no-verify", f"--file={message_file.name}"])
         return False
@@ -420,7 +424,7 @@ class Edit:
             opened_file.write(self.content)
 
         if os.path.exists(".pre-commit-config.yaml"):
-            run(["pre-commit", "run", "--files", self.filename], check=False)
+            run(["pre-commit", "run", "--files", self.filename], False)
         return False
 
 
@@ -472,7 +476,7 @@ class EditYAML:
                 with open(self.filename, "w", encoding="utf-8") as file_:
                     file_.write(new_data)
                 if os.path.exists(".pre-commit-config.yaml"):
-                    run(["pre-commit", "run", "--files", self.filename], check=False)
+                    run(["pre-commit", "run", "--files", self.filename], False)
         return False
 
     def __getitem__(self, key: str) -> Any:
@@ -537,18 +541,18 @@ def replace(filename: str, search_text: str, replace_text: str) -> None:
         file_.write(content)
 
 
-def edit(repo: Repo, files: List[str]) -> None:
+def edit(files: List[str]) -> None:
     """Edit the files in VSCode."""
     for file in files:
-        print(f"{repo['dir']}/{file}")
-        with open(f"{repo['dir']}/{file}", "a", encoding="utf-8"):
+        print(os.path.abspath(file))
+        with open(file, "a", encoding="utf-8"):
             pass
-        run(["code", f"{repo['dir']}/{file}"])
+        run(["code", file])
         print("Press enter to continue")
         input()
         # Remove the file if he is empty
-        if os.stat(f"{repo['dir']}/{file}").st_size == 0:
-            os.remove(f"{repo['dir']}/{file}")
+        if os.stat(file).st_size == 0:
+            os.remove(file)
 
 
 def update_stabilization_branches(repo: Repo) -> None:
@@ -621,7 +625,7 @@ class App:
     kwargs: Any = None
     local = False
     one = False
-    repo_prefix: Optional[str] = None
+    repository_prefix: Optional[str] = None
 
     def __init__(self, repos: List[Repo], action: Callable[[], None], browser: str = "firefox") -> None:
         self.repos = repos
@@ -658,7 +662,7 @@ class App:
         url_to_open = []
         try:
             for repo in self.repos:
-                if self.repo_prefix is None or repo["name"].startswith(self.repo_prefix):
+                if self.repository_prefix is None or repo["name"].startswith(self.repository_prefix):
                     try:
                         print(f"=== {repo['name']} ===")
                         with Cwd(repo):
@@ -739,21 +743,21 @@ def main(
     args = args_parser.parse_args()
 
     if config is None:
-        pull_request_on_stabilization_branches = args.pull_request_on_stabilization_branches
+        pull_request_on_stabilization_branches = args.on_stabilization_branches
         pull_request_title = args.pull_request_title
         pull_request_body = args.pull_request_body
-        pull_request_branch = args.pull_request_branch
-        pull_request_branch_prefix = args.pull_request_branch_prefix
+        pull_request_branch = args.branch
+        pull_request_branch_prefix = args.branch_prefix
     else:
         pull_request_on_stabilization_branches = config.get("pull_request_on_stabilization_branches", False)
         pull_request_title = config.get("pull_request_title", None)
         pull_request_body = config.get("pull_request_body", None)
-        pull_request_branch = config.get("pull_request_branch", None)
+        pull_request_branch = config.get("branch", None)
         pull_request_branch_prefix = config.get("pull_request_branch_prefix", None)
 
     repos = []
     if not args.local:
-        with open(args.repos, encoding="utf-8") as opened_file:
+        with open(args.repositories, encoding="utf-8") as opened_file:
             repos = yaml.load(opened_file.read(), Loader=yaml.SafeLoader)
 
     if action is None:
@@ -763,7 +767,7 @@ def main(
 
     app = App(repos, action, browser=args.browser)
     app.one = args.one
-    app.repo_prefix = args.repo_prefix
+    app.repository_prefix = args.repository_prefix
     if args.local:
         app.local = True
     elif pull_request_on_stabilization_branches:
