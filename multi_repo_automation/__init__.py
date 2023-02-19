@@ -29,6 +29,17 @@ import yaml
 from identify import identify
 from ruamel.yaml import YAML
 
+CONFIG_FILENAME = "multi-repo-automation.yaml"
+
+if "APPDATA" in os.environ:
+    CONFIG_FOLDER = os.environ["APPDATA"]
+elif "XDG_CONFIG_HOME" in os.environ:
+    CONFIG_FOLDER = os.environ["XDG_CONFIG_HOME"]
+else:
+    CONFIG_FOLDER = os.path.expanduser("~/.config")
+
+CONFIG_PATH = os.path.join(CONFIG_FOLDER, CONFIG_FILENAME)
+
 
 class Repo(TypedDict, total=False):
     """The repository description."""
@@ -701,12 +712,18 @@ class App:
 
 def main(
     action: Optional[Callable[[], None]] = None,
-    repos_filename: str = "repos.yaml",
-    browser: str = "firefox",
     description: str = "Apply an action on all the pre-configured repositories.",
     config: Optional[Dict[str, str]] = None,
 ) -> None:
     """Apply an action on all the repos."""
+
+    user_config = {}
+    if os.path.exists(CONFIG_FILENAME):
+        with open(CONFIG_FILENAME, encoding="utf-8") as config_file:
+            user_config = yaml.load(config_file, Loader=yaml.SafeLoader)
+    repos_filename: str = user_config.get("repos_filename", "repos.yaml")
+    browser: str = user_config.get("browser", "xdg-open")
+
     args_parser = argparse.ArgumentParser(description=description)
     args_parser_local = args_parser.add_argument_group("local", "To apply the action locally.")
     args_parser_local.add_argument("--local", action="store_true", help="Enable it.")

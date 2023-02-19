@@ -95,3 +95,10 @@ if __name__ == "__main__":
         },
     )
 ```
+
+## Configuration
+
+The configuration is a YAML file `~/.config/multi-repo-automation.yaml` with the following options:
+
+`repos_filename`: the filename of the files with the repositories definitions, default is `repos.yaml`.
+`browser`: the browser to use to open the pull requests, default is `xdg-open`.
