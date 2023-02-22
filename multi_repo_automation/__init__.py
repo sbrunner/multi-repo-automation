@@ -419,6 +419,10 @@ class Edit:
     def __init__(self, filename: str) -> None:
         """Initialize."""
         self.filename = filename
+        self.exists = os.path.exists(filename)
+        if not self.exists:
+            with open(filename, "w", encoding="utf-8") as opened_file:
+                pass
         with open(self.filename, encoding="utf-8") as opened_file:
             self.content = opened_file.read()
 
@@ -431,6 +435,10 @@ class Edit:
         exc_val: Optional[BaseException],
         exc_tb: Optional[TracebackType],
     ) -> Literal[False]:
+        if not self.exists and not self.content:
+            os.remove(self.filename)
+            return False
+
         with open(self.filename, "w", encoding="utf-8") as opened_file:
             opened_file.write(self.content)
 
@@ -461,11 +469,13 @@ class EditYAML:
         self.yaml.default_flow_style = default_flow_style
         self.yaml.width = width  # type: ignore
         self.force = force
+        self.exists = os.path.exists(filename)
 
     def __enter__(self) -> "EditYAML":
         """Load the file."""
-        with open(self.filename, encoding="utf-8") as file:
-            self.data = self.yaml.load(file)  # nosec
+        if not self.exists:
+            with open(self.filename, encoding="utf-8") as file:
+                self.data = self.yaml.load(file)  # nosec
         out = io.StringIO()
         self.yaml.dump(self.data, out)
         self.original_data = out.getvalue()
@@ -480,6 +490,10 @@ class EditYAML:
         """Save the file if the data has changed."""
         del exc_val, exc_tb
         if exc_type is None:
+            if not self.exists and not self.data:
+                os.remove(self.filename)
+                return False
+
             out = io.StringIO()
             self.yaml.dump(self.data, out)
             new_data = out.getvalue()
@@ -718,8 +732,8 @@ def main(
     """Apply an action on all the repos."""
 
     user_config = {}
-    if os.path.exists(CONFIG_FILENAME):
-        with open(CONFIG_FILENAME, encoding="utf-8") as config_file:
+    if os.path.exists(CONFIG_PATH):
+        with open(CONFIG_PATH, encoding="utf-8") as config_file:
             user_config = yaml.load(config_file, Loader=yaml.SafeLoader)
     repos_filename: str = user_config.get("repos_filename", "repos.yaml")
     browser: str = user_config.get("browser", "xdg-open")
