@@ -153,7 +153,7 @@ class CreateBranch:
         commit_message: Optional[str] = None,
         force: bool = True,
         base_branch: Optional[str] = None,
-        pr_body: Optional[str] = None,
+        pull_request_body: Optional[str] = None,
     ) -> None:
         """Initialize."""
         self.repo = repo
@@ -162,7 +162,7 @@ class CreateBranch:
         self.base_branch = base_branch
         self.new_branch_name = new_branch_name
         self.commit_message = commit_message
-        self.pr_body = pr_body
+        self.pull_request_body = pull_request_body
         self.force = force
         self.has_stashed = False
         self.pull_request_created = False
@@ -228,7 +228,7 @@ class CreateBranch:
                 self.commit_message,
                 force=self.force,
                 base_branch=self.base_branch,
-                body=self.pr_body,
+                body=self.pull_request_body,
             )
         if self.new_branch_name != self.old_branch_name:
             run(["git", "checkout", self.old_branch_name, "--"])
@@ -257,7 +257,6 @@ def create_pull_request(
         "gh",
         "pr",
         "create",
-        "--fill",
         f"--label={label}",
         f"--base={base_branch}",
     ]
@@ -646,7 +645,6 @@ class App:
     do_pr = False
     do_pr_on_stabilization_branches = False
     branch_prefix: Optional[str] = None
-    args: Any = None
     kwargs: Any = None
     local = False
     one = False
@@ -657,17 +655,16 @@ class App:
         self.action = action
         self.browser = browser
 
-    def init_pr(self, *args: Any, **kwargs: Any) -> None:
+    def init_pr(self, **kwargs: Any) -> None:
         """
         Configure to do create an pull request.
 
         On the master branch od all the repositories.
         """
         self.do_pr = True
-        self.args = args
         self.kwargs = kwargs
 
-    def init_pr_on_stabilization_branches(self, branch_prefix: str, *args: Any, **kwargs: Any) -> None:
+    def init_pr_on_stabilization_branches(self, branch_prefix: str, **kwargs: Any) -> None:
         """
         Configure to do create an pull request.
 
@@ -676,7 +673,6 @@ class App:
         self.do_pr = True
         self.do_pr_on_stabilization_branches = True
         self.branch_prefix = branch_prefix
-        self.args = args
         self.kwargs = kwargs
 
     def run(self) -> None:
@@ -700,7 +696,7 @@ class App:
                                     self.kwargs["base_branch"] = base_branch
                                     if self.do_pr_on_stabilization_branches:
                                         self.kwargs["branch"] = f"{self.branch_prefix}-{base_branch}"
-                                    create_branch = CreateBranch(repo, *self.args, **self.kwargs)
+                                    create_branch = CreateBranch(repo, **self.kwargs)
                                     with create_branch:
                                         self.action()
                                     if create_branch.pull_request_created:
@@ -803,10 +799,16 @@ def main(
         app.local = True
     elif pull_request_on_stabilization_branches:
         app.init_pr_on_stabilization_branches(
-            pull_request_branch_prefix, pull_request_title, pull_request_body
+            branch_prefix=pull_request_branch_prefix,
+            commit_message=pull_request_title,
+            pull_request_body=pull_request_body,
         )
     elif pull_request_branch:
-        app.init_pr(pull_request_branch, pull_request_title, pull_request_body)
+        app.init_pr(
+            new_branch_name=pull_request_branch,
+            commit_message=pull_request_title,
+            pull_request_body=pull_request_body,
+        )
     app.run()
 
 
