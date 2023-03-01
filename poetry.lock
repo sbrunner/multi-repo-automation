@@ -88,20 +88,19 @@ virtualenv = ["virtualenv (>=20.0.35)"]
 
 [[package]]
 name = "c2cciutils"
-version = "1.4.10"
+version = "1.5.0"
 description = "Common utilities for Camptocamp CI"
 category = "main"
 optional = true
 python-versions = ">=3.8,<4.0"
 files = [
-    {file = "c2cciutils-1.4.10-py3-none-any.whl", hash = "sha256:f98879aa0daa03ea7b6c4ec38d2566d5966d93ca73a9fa4ca80f00ba5b6e9607"},
-    {file = "c2cciutils-1.4.10.tar.gz", hash = "sha256:8dde1f698a4d391371a75cb1312447c68fcd077b951eb5acd43e3b0a519b9a34"},
+    {file = "c2cciutils-1.5.0-py3-none-any.whl", hash = "sha256:4761c2c99aab3c48e6ebe231ad4ea8a4a6379c83b650e0eb79c455b4c35d27ba"},
+    {file = "c2cciutils-1.5.0.tar.gz", hash = "sha256:e31ba0dfb766d38cdf684b1964fac1285e4eb2e0ce928ea7b8346fcfb94b7cf4"},
 ]
 
 [package.dependencies]
 certifi = ">=2022.0.0,<2023.0.0"
 click = ">=8.0.0,<9.0.0"
-cryptography = ">=39.0.0,<40.0.0"
 debian-inspector = ">=31.0.0,<32.0.0"
 defusedxml = ">=0.0.0,<1.0.0"
 jsonschema = ">=4.0.0,<5.0.0"
@@ -117,7 +116,7 @@ requests = ">=2.0.0,<3.0.0"
 toml = ">=0.0.0,<1.0.0"
 
 [package.extras]
-checks = ["EditorConfig (>=0.0.0,<1.0.0)", "black (==22.10.0)", "codespell (==2.2.1)", "isort (==5.10.1)"]
+checks = ["EditorConfig (>=0.0.0,<1.0.0)", "black (==22.12.0)", "codespell (==2.2.1)", "isort (==5.12.0)"]
 pr-checks = ["codespell (==2.2.1)"]
 publish = ["google-api-python-client (>=2.0.0,<3.0.0)", "google-auth-httplib2 (>=0.0.0,<1.0.0)", "google-auth-oauthlib (>=0.0.0,<1.0.0)", "tomlkit (>=0.0.0,<1.0.0)", "twine (>=4.0.0,<5.0.0)"]
 
@@ -927,14 +926,14 @@ files = [
 
 [[package]]
 name = "prospector"
-version = "1.8.4"
+version = "1.9.0"
 description = "Prospector is a tool to analyse Python code by aggregating the result of other tools."
 category = "dev"
 optional = false
-python-versions = ">=3.7,<4.0"
+python-versions = ">=3.7.2,<4.0"
 files = [
-    {file = "prospector-1.8.4-py3-none-any.whl", hash = "sha256:4a9584544cf8d118574567a669b85456d036444597f0664185263e229055cdf6"},
-    {file = "prospector-1.8.4.tar.gz", hash = "sha256:60db5b6046a523248a1b32fb2daa8080d3f406da822ad95cff8cd9f153e04555"},
+    {file = "prospector-1.9.0-py3-none-any.whl", hash = "sha256:c24011019e48b54745dc0f5d3d25e9d6b19750129996c134253c2f1eed9d45ac"},
+    {file = "prospector-1.9.0.tar.gz", hash = "sha256:599f31516f857d785058773875e9358702ad653e65461e8cad44134d8ee17b1f"},
 ]
 
 [package.dependencies]
@@ -944,7 +943,7 @@ flake8 = "<6.0.0"
 GitPython = ">=3.1.27,<4.0.0"
 mccabe = ">=0.7.0,<0.8.0"
 mypy = {version = ">=0.600", optional = true, markers = "extra == \"with_mypy\" or extra == \"with_everything\""}
-packaging = "<22.0"
+packaging = "*"
 pep8-naming = ">=0.3.3,<=0.10.0"
 pycodestyle = ">=2.9.0"
 pydocstyle = ">=2.0.0"
@@ -1705,4 +1704,4 @@ update-stabilization-branches = ["c2cciutils"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8,<4.0"
-content-hash = "12cf32871fcc58148bbda0ee0fbb5c0e2a9dc919c654d00383dc012834b22e20"
+content-hash = "a85f1ecd8c02586dbc65d633b7fe858ee562f4bc5d627b202a533980ff39dec6"
