@@ -209,7 +209,7 @@ class CreateBranch:
         run(["git", "fetch"])
         run(["git", "checkout", self.repo.get("master_branch") or "master"])
         if self.new_branch_name == self.old_branch_name:
-            run(["git", "reset", "--hard", f"origin/{self.new_branch_name}", "--"])
+            run(["git", "reset", "--hard", f"origin/{self.base_branch}", "--"])
         else:
             run(["git", "branch", "--delete", "--force", self.new_branch_name], False)
             run(
