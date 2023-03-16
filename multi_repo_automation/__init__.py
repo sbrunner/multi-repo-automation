@@ -9,6 +9,7 @@ import shutil
 import subprocess  # nosec
 import sys
 import tempfile
+import traceback
 from types import TracebackType
 from typing import (
     Any,
@@ -118,6 +119,15 @@ class Cwd:
         exc_tb: Optional[TracebackType],
     ) -> Literal[False]:
         """Restore the cwd."""
+        del exc_tb
+
+        if exc_type is not None:
+            print("=" * 30)
+            print(type(self).__name__)
+            print(exc_type.__name__)
+            print(exc_val)
+            traceback.print_exc()
+
         os.chdir(self.cwd)
         return False
 
@@ -220,7 +230,14 @@ class CreateBranch:
         exc_tb: Optional[TracebackType],
     ) -> Literal[False]:
         """Create the pull request."""
-        del exc_val, exc_tb
+        del exc_tb
+
+        if exc_type is not None:
+            print("=" * 30)
+            print(type(self).__name__)
+            print(exc_type.__name__)
+            print(exc_val)
+            traceback.print_exc()
 
         if self.commit_message and exc_type is None:
             self.pull_request_created, self.message = create_pull_request(
@@ -350,7 +367,14 @@ class Branch:
         exc_tb: Optional[TracebackType],
     ) -> Literal[False]:
         """Exit."""
-        del exc_val, exc_tb
+        del exc_tb
+
+        if exc_type is not None:
+            print("=" * 30)
+            print(type(self).__name__)
+            print(exc_type.__name__)
+            print(exc_val)
+            traceback.print_exc()
 
         if exc_type is None and self.push:
             if self.force:
@@ -388,7 +412,14 @@ class Commit:
         exc_tb: Optional[TracebackType],
     ) -> Literal[False]:
         """Commit the changes."""
-        del exc_val, exc_tb
+        del exc_tb
+
+        if exc_type is not None:
+            print("=" * 30)
+            print(type(self).__name__)
+            print(exc_type.__name__)
+            print(exc_val)
+            traceback.print_exc()
 
         if exc_type is None:
             if not run(["git", "status", "--short"], stdout=subprocess.PIPE).stdout.strip():
@@ -434,6 +465,15 @@ class Edit:
         exc_val: Optional[BaseException],
         exc_tb: Optional[TracebackType],
     ) -> Literal[False]:
+        del exc_tb
+
+        if exc_type is not None:
+            print("=" * 30)
+            print(type(self).__name__)
+            print(exc_type.__name__)
+            print(exc_val)
+            traceback.print_exc()
+
         if not self.exists and not self.content:
             os.remove(self.filename)
             return False
@@ -487,7 +527,15 @@ class EditYAML:
         exc_tb: Optional[TracebackType],
     ) -> Literal[False]:
         """Save the file if the data has changed."""
-        del exc_val, exc_tb
+        del exc_tb
+
+        if exc_type is not None:
+            print("=" * 30)
+            print(type(self).__name__)
+            print(exc_type.__name__)
+            print(exc_val)
+            traceback.print_exc()
+
         if exc_type is None:
             if not self.exists and not self.data:
                 os.remove(self.filename)
