@@ -9,6 +9,7 @@ import shutil
 import subprocess  # nosec
 import sys
 import tempfile
+import traceback
 from types import TracebackType
 from typing import (
     Any,
@@ -118,6 +119,15 @@ class Cwd:
         exc_tb: Optional[TracebackType],
     ) -> Literal[False]:
         """Restore the cwd."""
+        del exc_tb
+
+        if exc_type is not None:
+            print("=" * 30)
+            print(type(self).__name__)
+            print(exc_type.__name__)
+            print(exc_val)
+            traceback.print_exc()
+
         os.chdir(self.cwd)
         return False
 
@@ -199,7 +209,7 @@ class CreateBranch:
         run(["git", "fetch"])
         run(["git", "checkout", self.repo.get("master_branch") or "master"])
         if self.new_branch_name == self.old_branch_name:
-            run(["git", "reset", "--hard", f"origin/{self.new_branch_name}", "--"])
+            run(["git", "reset", "--hard", f"origin/{self.base_branch}", "--"])
         else:
             run(["git", "branch", "--delete", "--force", self.new_branch_name], False)
             run(
@@ -220,7 +230,14 @@ class CreateBranch:
         exc_tb: Optional[TracebackType],
     ) -> Literal[False]:
         """Create the pull request."""
-        del exc_val, exc_tb
+        del exc_tb
+
+        if exc_type is not None:
+            print("=" * 30)
+            print(type(self).__name__)
+            print(exc_type.__name__)
+            print(exc_val)
+            traceback.print_exc()
 
         if self.commit_message and exc_type is None:
             self.pull_request_created, self.message = create_pull_request(
@@ -350,7 +367,14 @@ class Branch:
         exc_tb: Optional[TracebackType],
     ) -> Literal[False]:
         """Exit."""
-        del exc_val, exc_tb
+        del exc_tb
+
+        if exc_type is not None:
+            print("=" * 30)
+            print(type(self).__name__)
+            print(exc_type.__name__)
+            print(exc_val)
+            traceback.print_exc()
 
         if exc_type is None and self.push:
             if self.force:
@@ -388,7 +412,14 @@ class Commit:
         exc_tb: Optional[TracebackType],
     ) -> Literal[False]:
         """Commit the changes."""
-        del exc_val, exc_tb
+        del exc_tb
+
+        if exc_type is not None:
+            print("=" * 30)
+            print(type(self).__name__)
+            print(exc_type.__name__)
+            print(exc_val)
+            traceback.print_exc()
 
         if exc_type is None:
             if not run(["git", "status", "--short"], stdout=subprocess.PIPE).stdout.strip():
@@ -434,6 +465,15 @@ class Edit:
         exc_val: Optional[BaseException],
         exc_tb: Optional[TracebackType],
     ) -> Literal[False]:
+        del exc_tb
+
+        if exc_type is not None:
+            print("=" * 30)
+            print(type(self).__name__)
+            print(exc_type.__name__)
+            print(exc_val)
+            traceback.print_exc()
+
         if not self.exists and not self.content:
             os.remove(self.filename)
             return False
@@ -472,7 +512,7 @@ class EditYAML:
 
     def __enter__(self) -> "EditYAML":
         """Load the file."""
-        if not self.exists:
+        if self.exists:
             with open(self.filename, encoding="utf-8") as file:
                 self.data = self.yaml.load(file)  # nosec
         out = io.StringIO()
@@ -487,7 +527,15 @@ class EditYAML:
         exc_tb: Optional[TracebackType],
     ) -> Literal[False]:
         """Save the file if the data has changed."""
-        del exc_val, exc_tb
+        del exc_tb
+
+        if exc_type is not None:
+            print("=" * 30)
+            print(type(self).__name__)
+            print(exc_type.__name__)
+            print(exc_val)
+            traceback.print_exc()
+
         if exc_type is None:
             if not self.exists and not self.data:
                 os.remove(self.filename)
@@ -727,6 +775,7 @@ def main(
 ) -> None:
     """Apply an action on all the repos."""
 
+    config = config or {}
     user_config = {}
     if os.path.exists(CONFIG_PATH):
         with open(CONFIG_PATH, encoding="utf-8") as config_file:
@@ -746,22 +795,32 @@ def main(
     )
     args_parser_repos.add_argument("--repository-prefix", help="Apply on repository with prefix.")
     args_parser_repos.add_argument("--one", action="store_true", help="Open only one pull request.")
-    if config is None:
-        args_parser_repos.add_argument("--pull-request-title", help="The pull request title.")
-        args_parser_repos.add_argument("--pull-request-body", help="The pull request body.")
-        args_parser_master = args_parser.add_argument_group(
-            "master", "To apply the action on all master branches."
-        )
-        args_parser_master.add_argument("--branch", help="The created branch branch name.")
-        args_parser_stabilization = args_parser.add_argument_group(
-            "stabilization", "To apply the action on all stabilization (including master) branches."
-        )
+    args_parser_repos.add_argument(
+        "--pull-request-title", help="The pull request title.", default=config.get("pull_request_title", None)
+    )
+    args_parser_repos.add_argument(
+        "--pull-request-body", help="The pull request body.", default=config.get("pull_request_body", None)
+    )
+    args_parser_master = args_parser.add_argument_group(
+        "master", "To apply the action on all master branches."
+    )
+    args_parser_master.add_argument(
+        "--branch", help="The created branch branch name.", default=config.get("branch", None)
+    )
+    args_parser_stabilization = args_parser.add_argument_group(
+        "stabilization", "To apply the action on all stabilization (including master) branches."
+    )
+    if "pull_request_on_stabilization_branches" not in config:
         args_parser_stabilization.add_argument(
             "--on-stabilization-branches",
             action="store_true",
             help="Enable it.",
         )
-        args_parser_stabilization.add_argument("--branch-prefix", help="The created branch prefix.")
+    args_parser_stabilization.add_argument(
+        "--branch-prefix",
+        help="The created branch prefix.",
+        default=config.get("pull_request_branch_prefix", None),
+    )
     args_parser_repos.add_argument(
         "--browser", default=browser, help="The browser used to open the created pull requests"
     )
@@ -769,18 +828,15 @@ def main(
         args_parser.add_argument("command", help="The command to run.")
     args = args_parser.parse_args()
 
-    if config is None:
-        pull_request_on_stabilization_branches = args.on_stabilization_branches
-        pull_request_title = args.pull_request_title
-        pull_request_body = args.pull_request_body
-        pull_request_branch = args.branch
-        pull_request_branch_prefix = args.branch_prefix
-    else:
-        pull_request_on_stabilization_branches = config.get("pull_request_on_stabilization_branches", False)
-        pull_request_title = config.get("pull_request_title", None)
-        pull_request_body = config.get("pull_request_body", None)
-        pull_request_branch = config.get("branch", None)
-        pull_request_branch_prefix = config.get("pull_request_branch_prefix", None)
+    pull_request_on_stabilization_branches = (
+        config["pull_request_on_stabilization_branches"]
+        if "pull_request_on_stabilization_branches" in config
+        else args.on_stabilization_branches
+    )
+    pull_request_title = args.pull_request_title
+    pull_request_body = args.pull_request_body
+    pull_request_branch = args.branch
+    pull_request_branch_prefix = args.branch_prefix
 
     repos = []
     if not args.local:
