@@ -259,7 +259,7 @@ def create_pull_request(
     repo: Repo,
     title: Optional[str] = None,
     commit: bool = True,
-    label: str = "chore",
+    label: Optional[str] = None,
     body: Optional[str] = None,
     force: bool = True,
     base_branch: Optional[str] = None,
@@ -274,9 +274,10 @@ def create_pull_request(
         "gh",
         "pr",
         "create",
-        f"--label={label}",
         f"--base={base_branch}",
     ]
+    if label:
+        cmd.append(f"--label={label}")
     if commit:
         run(["git", "add", "--all"])
         assert title is not None  # nosec
