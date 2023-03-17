@@ -102,3 +102,12 @@ The configuration is a YAML file `~/.config/multi-repo-automation.yaml` with the
 
 `repos_filename`: the filename of the files with the repositories definitions, default is `repos.yaml`.
 `browser`: the browser to use to open the pull requests, default is `xdg-open`.
+
+## Contributing
+
+Install the pre-commit hooks:
+
+```bash
+pip install pre-commit
+pre-commit install --allow-missing-config
+```
