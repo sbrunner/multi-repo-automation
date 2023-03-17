@@ -201,7 +201,7 @@ class CreateBranch:
             shutil.rmtree(folder, ignore_errors=True)
         if self.repo.get("clean", True):
             run(["git", "clean", "-dfX"])
-            proc = run(["git", "stash", "--all"], stdout=subprocess.PIPE, encoding="utf-8", env={})
+            proc = run(["git", "stash", "--all"], stdout=subprocess.PIPE, exit_on_error=False)
             self.has_stashed = proc.stdout.strip() != "No local changes to save"
         else:
             proc = run(["git", "stash"], stdout=subprocess.PIPE, encoding="utf-8", env={})
@@ -744,7 +744,7 @@ class App:
                                 for base_branch in base_branches:
                                     self.kwargs["base_branch"] = base_branch
                                     if self.do_pr_on_stabilization_branches:
-                                        self.kwargs["branch"] = f"{self.branch_prefix}-{base_branch}"
+                                        self.kwargs["new_branch_name"] = f"{self.branch_prefix}-{base_branch}"
                                     create_branch = CreateBranch(repo, **self.kwargs)
                                     with create_branch:
                                         self.action()
