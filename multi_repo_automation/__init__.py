@@ -23,6 +23,7 @@ from typing import (
     Tuple,
     Type,
     TypedDict,
+    cast,
 )
 
 import requests
@@ -435,6 +436,67 @@ class Commit:
         return False
 
 
+class HookDefinition(TypedDict, total=False):
+    """Hook standard definition."""
+
+    id: str
+    args: List[str]
+    files: str
+    language_version: str
+    additional_dependencies: List[str]
+
+
+class RepoDefinition(TypedDict):
+    """Repo standard definition."""
+
+    repo: str
+    rev: str
+    hooks: List[HookDefinition]
+
+
+class _RepoRepresentation(TypedDict):
+    """Repo representation used internally."""
+
+    repo: RepoDefinition
+    hooks: Dict[str, HookDefinition]
+
+
+def add_pre_commit_hook(repo: str, rev: str, hook: HookDefinition) -> None:
+    """
+    Add the pre-commit hook.
+
+    To check that the configuration is correct.
+
+    Example:
+    -------
+    ```python
+    mra.add_pre_commit_hook(
+        "https://github.com/pre-commit/mirrors-prettier",
+        "v2.7.1",
+        {"id": "prettier", "additional_dependencies": ["prettier@2.8.4"]},
+    )
+    ```
+    """
+    with EditYAML(
+        ".pre-commit-config.yaml", add_pre_commit_configuration_if_modified=False
+    ) as pre_commit_config:
+        repos_hooks: Dict[str, _RepoRepresentation] = {}
+        for repo_ in cast(List[RepoDefinition], pre_commit_config.setdefault("repos", [])):
+            repos_hooks.setdefault(
+                repo_["repo"], {"repo": repo_, "hooks": {hook["id"]: hook for hook in repo_["hooks"]}}
+            )
+
+        if repo not in repos_hooks:
+            repo_obj: RepoDefinition = {"repo": repo, "rev": rev, "hooks": []}
+            pre_commit_config["repos"].append(repo_obj)
+
+            repos_hooks.setdefault(repo, {"repo": repo_obj, "hooks": {}})
+
+        if hook["id"] not in repos_hooks[repo]["hooks"]:
+            repos_hooks[repo]["repo"]["hooks"].append(hook)
+            repos_hooks[repo]["hooks"][hook["id"]] = hook
+
+
 class Edit:
     r"""
     Edit a file.
@@ -447,15 +509,25 @@ class Edit:
     ```
     """
 
-    def __init__(self, filename: str) -> None:
+    def __init__(
+        self,
+        filename: str,
+        pre_commit_repo: Optional[str] = None,
+        pre_commit_rev: Optional[str] = None,
+        pre_commit_hook: Optional[HookDefinition] = None,
+    ) -> None:
         """Initialize."""
         self.filename = filename
+        self.pre_commit_repo = pre_commit_repo
+        self.pre_commit_rev = pre_commit_rev
+        self.pre_commit_hook = pre_commit_hook
         self.exists = os.path.exists(filename)
         if not self.exists:
             with open(filename, "w", encoding="utf-8") as opened_file:
                 pass
         with open(self.filename, encoding="utf-8") as opened_file:
             self.content = opened_file.read()
+            self.original_content = self.content
 
     def __enter__(self) -> "Edit":
         return self
@@ -479,8 +551,15 @@ class Edit:
             os.remove(self.filename)
             return False
 
-        with open(self.filename, "w", encoding="utf-8") as opened_file:
-            opened_file.write(self.content)
+        if self.content != self.original_content:
+            if (
+                self.pre_commit_repo is not None
+                and self.pre_commit_rev is not None
+                and self.pre_commit_hook is not None
+            ):
+                add_pre_commit_hook(self.pre_commit_repo, self.pre_commit_rev, self.pre_commit_hook)
+            with open(self.filename, "w", encoding="utf-8") as opened_file:
+                opened_file.write(self.content)
 
         if os.path.exists(".pre-commit-config.yaml"):
             run(["pre-commit", "run", "--files", self.filename], False)
@@ -500,7 +579,12 @@ class EditYAML:
     original_data: Optional[str]
 
     def __init__(
-        self, filename: str, width: int = 110, default_flow_style: bool = False, force: bool = False
+        self,
+        filename: str,
+        width: int = 110,
+        default_flow_style: bool = False,
+        force: bool = False,
+        add_pre_commit_configuration_if_modified: bool = True,
     ):
         """Initialize the object."""
         self.filename = filename
@@ -510,6 +594,7 @@ class EditYAML:
         self.yaml.width = width  # type: ignore
         self.force = force
         self.exists = os.path.exists(filename)
+        self.add_pre_commit_configuration_if_modified = add_pre_commit_configuration_if_modified
 
     def __enter__(self) -> "EditYAML":
         """Load the file."""
@@ -546,6 +631,13 @@ class EditYAML:
             self.yaml.dump(self.data, out)
             new_data = out.getvalue()
             if self.force or new_data != self.original_data:
+                if self.add_pre_commit_configuration_if_modified:
+                    add_pre_commit_hook(
+                        "https://github.com/pre-commit/mirrors-prettier",
+                        "v2.7.1",
+                        {"id": "prettier", "additional_dependencies": ["prettier@2.8.4"]},
+                    )
+
                 with open(self.filename, "w", encoding="utf-8") as file_:
                     file_.write(new_data)
                 if os.path.exists(".pre-commit-config.yaml"):
@@ -669,7 +761,7 @@ def do_on_base_branches(
     for branch in branches:
         create_branch = CreateBranch(
             repo,
-            f"{branch_prefix}-{branch}",
+            f"{branch_prefix.rstrip('-')}-{branch}",
             "Fix pull requests check workflow, use our CI token",
             base_branch=branch,
         )
@@ -744,7 +836,9 @@ class App:
                                 for base_branch in base_branches:
                                     self.kwargs["base_branch"] = base_branch
                                     if self.do_pr_on_stabilization_branches:
-                                        self.kwargs["new_branch_name"] = f"{self.branch_prefix}-{base_branch}"
+                                        self.kwargs[
+                                            "new_branch_name"
+                                        ] = f"{self.branch_prefix.rstrip('-')}-{base_branch}"
                                     create_branch = CreateBranch(repo, **self.kwargs)
                                     with create_branch:
                                         self.action()
