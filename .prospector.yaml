@@ -37,6 +37,8 @@ pydocstyle:
 
 bandit:
   run: true
+  options:
+    config: .bandit.yaml
 
 mypy:
   run: true

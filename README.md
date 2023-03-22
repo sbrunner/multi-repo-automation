@@ -1,17 +1,48 @@
 # Multi repo automation
 
-## Config
+## Configuration
 
-Create a file with something like this:
+To be able to apply your changes on multiple repository you should create a file with something like this:
 
 ```yaml
-- dir: /home/user/src/myrepo
-  name: user/myrepo
+- dir: /home/user/src/my-repo
+  name: user/my-repo
   types: ['javascript', 'python', 'docker']
   master_branch: master
   stabilization_branches: [1.0, 1.1]
   folders_to_clean: []
 ```
+
+The main configuration is a YAML file `~/.config/multi-repo-automation.yaml` with the following options:
+
+`repos_filename`: the filename of the files with the repositories definitions create above, default is `repos.yaml`.
+`browser`: the browser to use to open the pull requests, default is `xdg-open`.
+`editor`: the editor to use to edit files, default is `xdg-open`.
+
+## Migration script base
+
+```python
+#!/usr/bin/env python3
+
+import multi_repo_automation as mra
+
+def _do() -> None:
+    # Your actions
+
+if __name__ == "__main__":
+    mra.main(
+        _do,
+        config={
+        # pull_request_on_stabilization_branches: To apply the action on all stabilization (including master) branches.
+        # pull_request_title: The pull request title.
+        # pull_request_body: The pull request body.
+        # branch: The created branch branch name.
+        # pull_request_branch_prefix: The created branch prefix (used when we run it on all the stabilization branches).
+        },
+    )
+```
+
+Use the `--help` option to see the available options.
 
 ## Utilities
 
@@ -26,82 +57,23 @@ mra.all_filenames_identify("yaml")
 # Test if a file exists and contains a text
 if mra.git_grep(file, r"\<text\>"]):
   print("Found")
-# Edit a file in vscode
-mra.edit("file")
+# Edit a files manually
+mra.edit(["file"])
 ```
 
-## Genenric run
+### Edit file programmatically
 
 ```python
-#!/usr/bin/env python3
-import multi_repo_automation as mra
-
-
-def _do() -> None:
-    # Do something
-    pass
-
-if __name__ == "__main__":
-    mra.main(_do)
+   with mra.Edit('my-file.txt') as edit:
+      edit.content = edit.content.replace('<from>', '<to>')
 ```
 
-In the \_do function do the changes you want in your repo.
-
-Use the `--help` option to see the available options.
-
-## To update all the master branches write a script like
+### Edit YAML file programmatically
 
 ```python
-#!/usr/bin/env python3
-import multi_repo_automation as mra
-
-def _do() -> None:
-    # Do something
-    pass
-
-if __name__ == "__main__":
-    mra.main(
-        _do,
-        os.path.join(os.path.dirname(__file__), "repo.yaml"),
-        "/home/sbrunner/bin/firefox/firefox",
-        config={
-            "pull_request_branch": "branch_name",
-            "pull_request_title": "Commit/Pull request message",
-            "pull_request_body": "Optional body",
-        },
-    )
+   with mra.EditYAML('my-file.yaml') as edit:
+      edit.content = edit.setdefault('dict', {})['prop'] = 'value'
 ```
-
-## To update all the stabilization branches write a script like
-
-```python
-#!/usr/bin/env python3
-import multi_repo_automation as mra
-
-def _do() -> None:
-    # Do something
-    pass
-
-if __name__ == "__main__":
-    mra.main(
-        _do,
-        os.path.join(os.path.dirname(__file__), "repo.yaml"),
-        "/home/sbrunner/bin/firefox/firefox",
-        config={
-            "pull_request_on_stabilization_branches": True,
-            "pull_request_branch_prefix": "prefix",
-            "pull_request_title": "Commit/Pull request message",
-            "pull_request_body": "Optional body",
-        },
-    )
-```
-
-## Configuration
-
-The configuration is a YAML file `~/.config/multi-repo-automation.yaml` with the following options:
-
-`repos_filename`: the filename of the files with the repositories definitions, default is `repos.yaml`.
-`browser`: the browser to use to open the pull requests, default is `xdg-open`.
 
 ## Contributing
 
