@@ -54,6 +54,30 @@ class Repo(TypedDict, total=False):
     clean: bool
 
 
+_BROWSER = {}
+
+
+def get_browser() -> Repo:
+    """Get the global configuration."""
+    return _BROWSER
+
+
+_REPO_CONFIG: Repo = {}
+
+
+def get_repo_config() -> Repo:
+    """Get the repository configuration."""
+    return _REPO_CONFIG
+
+
+_ARGUMENTS: argparse.Namespace = None
+
+
+def get_arguments() -> argparse.Namespace:
+    """Get the global arguments."""
+    return _ARGUMENTS
+
+
 def all_filenames(repo: Optional[Repo] = None) -> List[str]:
     """Get all the filenames of the repository."""
     cmd = ["git", "ls-files"]
@@ -716,7 +740,7 @@ def edit(files: List[str]) -> None:
         print("Press enter to continue")
         input()
         # Remove the file if he is empty
-        if os.stat(file).st_size == 0:
+        if os.path.exists(file) and os.stat(file).st_size == 0:
             os.remove(file)
 
 
@@ -818,12 +842,15 @@ class App:
 
     def run(self) -> None:
         """Run the conversion."""
+        global _REPO_CONFIG  # pylint: disable=global-statement
+
         if self.local:
             self.action()
             return
         url_to_open = []
         try:
             for repo in self.repos:
+                _REPO_CONFIG = repo
                 if self.repository_prefix is None or repo["name"].startswith(self.repository_prefix):
                     try:
                         print(f"=== {repo['name']} ===")
@@ -867,6 +894,7 @@ def main(
     action: Optional[Callable[[], None]] = None,
     description: str = "Apply an action on all the pre-configured repositories.",
     config: Optional[Dict[str, str]] = None,
+    add_arguments: Optional[Callable[[argparse.ArgumentParser], None]] = None,
 ) -> None:
     """Apply an action on all the repos."""
 
@@ -921,7 +949,13 @@ def main(
     )
     if action is None:
         args_parser.add_argument("command", help="The command to run.")
+
+    if add_arguments is not None:
+        add_arguments(args_parser)
+
     args = args_parser.parse_args()
+    global _ARGUMENTS  # pylint: disable=global-statement
+    _ARGUMENTS = args
 
     pull_request_on_stabilization_branches = (
         config["pull_request_on_stabilization_branches"]
@@ -943,6 +977,8 @@ def main(
         def action() -> None:
             run([args.command])
 
+    global _BROWSER  # pylint: disable=global-statement
+    _BROWSER = args.browser
     app = App(repos, action, browser=args.browser)
     app.one = args.one
     app.repository_prefix = args.repository_prefix
