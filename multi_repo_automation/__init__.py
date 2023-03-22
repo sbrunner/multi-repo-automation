@@ -54,12 +54,20 @@ class Repo(TypedDict, total=False):
     clean: bool
 
 
-_BROWSER = {}
+_BROWSER = "xdg-open"
 
 
-def get_browser() -> Repo:
+def get_browser() -> str:
     """Get the global configuration."""
     return _BROWSER
+
+
+_EDITOR = "xdg-open"
+
+
+def get_editor() -> str:
+    """Get the global configuration."""
+    return _EDITOR
 
 
 _REPO_CONFIG: Repo = {}
@@ -70,11 +78,13 @@ def get_repo_config() -> Repo:
     return _REPO_CONFIG
 
 
-_ARGUMENTS: argparse.Namespace = None
+_ARGUMENTS: Optional[argparse.Namespace] = None
 
 
 def get_arguments() -> argparse.Namespace:
     """Get the global arguments."""
+
+    assert _ARGUMENTS is not None
     return _ARGUMENTS
 
 
@@ -731,12 +741,12 @@ def replace(filename: str, search_text: str, replace_text: str) -> None:
 
 
 def edit(files: List[str]) -> None:
-    """Edit the files in VSCode."""
+    """Edit the files in an editor."""
     for file in files:
         print(os.path.abspath(file))
         with open(file, "a", encoding="utf-8"):
             pass
-        run(["code", file])
+        run([get_editor(), file])
         print("Press enter to continue")
         input()
         # Remove the file if he is empty
@@ -863,6 +873,7 @@ class App:
                                 for base_branch in base_branches:
                                     self.kwargs["base_branch"] = base_branch
                                     if self.do_pr_on_stabilization_branches:
+                                        assert self.branch_prefix is not None
                                         self.kwargs[
                                             "new_branch_name"
                                         ] = f"{self.branch_prefix.rstrip('-')}-{base_branch}"
@@ -904,7 +915,6 @@ def main(
         with open(CONFIG_PATH, encoding="utf-8") as config_file:
             user_config = yaml.load(config_file, Loader=yaml.SafeLoader)
     repos_filename: str = user_config.get("repos_filename", "repos.yaml")
-    browser: str = user_config.get("browser", "xdg-open")
 
     args_parser = argparse.ArgumentParser(description=description)
     args_parser_local = args_parser.add_argument_group("local", "To apply the action locally.")
@@ -945,7 +955,12 @@ def main(
         default=config.get("pull_request_branch_prefix", None),
     )
     args_parser_repos.add_argument(
-        "--browser", default=browser, help="The browser used to open the created pull requests"
+        "--browser",
+        default=user_config.get("browser", "xdg-open"),
+        help="The browser used to open the created pull requests",
+    )
+    args_parser_repos.add_argument(
+        "--editor", default=user_config.get("editor", "xdg-open"), help="The editor used to open the files"
     )
     if action is None:
         args_parser.add_argument("command", help="The command to run.")
@@ -979,6 +994,10 @@ def main(
 
     global _BROWSER  # pylint: disable=global-statement
     _BROWSER = args.browser
+
+    global _EDITOR  # pylint: disable=global-statement
+    _EDITOR = args.editor
+
     app = App(repos, action, browser=args.browser)
     app.one = args.one
     app.repository_prefix = args.repository_prefix
