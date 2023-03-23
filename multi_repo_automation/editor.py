@@ -256,6 +256,9 @@ class EditYAML(_EditDict):
         width: int = 110,
         default_flow_style: bool = False,
         preserve_quotes: bool = True,
+        mapping: int = 2,
+        sequence: int = 4,
+        offset: int = 2,
         force: bool = False,
         add_pre_commit_configuration_if_modified: bool = True,
     ):
@@ -267,6 +270,7 @@ class EditYAML(_EditDict):
         self.yaml.default_flow_style = default_flow_style
         self.yaml.width = width  # type: ignore
         self.yaml.preserve_quotes = preserve_quotes  # type: ignore
+        self.yaml.indent(mapping=mapping, sequence=sequence, offset=offset)
 
     def load(self, content: io.TextIOWrapper) -> Dict[str, Any]:
         """Load the file."""
