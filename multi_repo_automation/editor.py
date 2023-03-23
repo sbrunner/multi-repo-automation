@@ -129,8 +129,8 @@ class Edit:
             with open(self.filename, "w", encoding="utf-8") as opened_file:
                 opened_file.write(self.content)
 
-        if os.path.exists(".pre-commit-config.yaml"):
-            run(["pre-commit", "run", "--files", self.filename], False)
+            if os.path.exists(".pre-commit-config.yaml"):
+                run(["pre-commit", "run", "--files", self.filename], False)
         return False
 
 
