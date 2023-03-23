@@ -72,7 +72,21 @@ mra.edit(["file"])
 
 ```python
    with mra.EditYAML('my-file.yaml') as edit:
-      edit.content = edit.setdefault('dict', {})['prop'] = 'value'
+      edit.setdefault('dict', {})['prop'] = 'value'
+```
+
+### Edit TOML file programmatically
+
+```python
+   with mra.EditTOML('my-file.toml') as edit:
+      edit.setdefault('dict', {})['prop'] = 'value'
+```
+
+### Edit Config file programmatically
+
+```python
+   with mra.EditConfigL('my-file.ini') as edit:
+      edit.setdefault('dict', {})['prop'] = 'value'
 ```
 
 ## Contributing

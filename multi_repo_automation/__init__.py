@@ -1,13 +1,10 @@
 """Tools to automated changes on multiple repositories."""
 
 import argparse
-import io
 import os
 import re
-import shlex
 import shutil
 import subprocess  # nosec
-import sys
 import tempfile
 import traceback
 from types import TracebackType
@@ -15,7 +12,6 @@ from typing import (
     Any,
     Callable,
     Dict,
-    Iterator,
     List,
     Literal,
     Optional,
@@ -23,13 +19,17 @@ from typing import (
     Tuple,
     Type,
     TypedDict,
-    cast,
 )
 
 import requests
 import yaml
 from identify import identify
-from ruamel.yaml import YAML
+
+from multi_repo_automation.editor import Edit  # noqa
+from multi_repo_automation.editor import EditTOML  # noqa
+from multi_repo_automation.editor import EditYAML  # noqa
+from multi_repo_automation.editor import add_pre_commit_hook  # noqa
+from multi_repo_automation.tools import run
 
 CONFIG_FILENAME = "multi-repo-automation.yaml"
 
@@ -114,21 +114,6 @@ def all_filenames_identify(type_: str, repo: Optional[Repo] = None) -> List[str]
         if type_ in identify.tags_from_path(filename):
             result.append(filename)
     return result
-
-
-def run(cmd: List[str], exit_on_error: bool = True, **kwargs: Any) -> subprocess.CompletedProcess[str]:
-    """Run a command."""
-    print(shlex.join(cmd))
-    sys.stdout.flush()
-    if "stdout" in kwargs and kwargs["stdout"] == subprocess.PIPE and "encoding" not in kwargs:
-        kwargs["encoding"] = "utf-8"
-    process = subprocess.run(cmd, **kwargs)  # pylint: disable=subprocess-run-check # nosec
-
-    if process.returncode != 0:
-        print(f"Error on running: {shlex.join(cmd)}")
-        if exit_on_error:
-            sys.exit(process.returncode)
-    return process
 
 
 class Cwd:
@@ -468,247 +453,6 @@ class Commit:
                     run(["git", "add", "--all"])
                     run(["git", "commit", "--no-verify", f"--file={message_file.name}"])
         return False
-
-
-class HookDefinition(TypedDict, total=False):
-    """Hook standard definition."""
-
-    id: str
-    args: List[str]
-    files: str
-    language_version: str
-    additional_dependencies: List[str]
-
-
-class RepoDefinition(TypedDict):
-    """Repo standard definition."""
-
-    repo: str
-    rev: str
-    hooks: List[HookDefinition]
-
-
-class _RepoRepresentation(TypedDict):
-    """Repo representation used internally."""
-
-    repo: RepoDefinition
-    hooks: Dict[str, HookDefinition]
-
-
-def add_pre_commit_hook(repo: str, rev: str, hook: HookDefinition) -> None:
-    """
-    Add the pre-commit hook.
-
-    To check that the configuration is correct.
-
-    Example:
-    -------
-    ```python
-    mra.add_pre_commit_hook(
-        "https://github.com/pre-commit/mirrors-prettier",
-        "v2.7.1",
-        {"id": "prettier", "additional_dependencies": ["prettier@2.8.4"]},
-    )
-    ```
-    """
-    with EditYAML(
-        ".pre-commit-config.yaml", add_pre_commit_configuration_if_modified=False
-    ) as pre_commit_config:
-        repos_hooks: Dict[str, _RepoRepresentation] = {}
-        for repo_ in cast(List[RepoDefinition], pre_commit_config.setdefault("repos", [])):
-            repos_hooks.setdefault(
-                repo_["repo"], {"repo": repo_, "hooks": {hook["id"]: hook for hook in repo_["hooks"]}}
-            )
-
-        if repo not in repos_hooks:
-            repo_obj: RepoDefinition = {"repo": repo, "rev": rev, "hooks": []}
-            pre_commit_config["repos"].append(repo_obj)
-
-            repos_hooks.setdefault(repo, {"repo": repo_obj, "hooks": {}})
-
-        if hook["id"] not in repos_hooks[repo]["hooks"]:
-            repos_hooks[repo]["repo"]["hooks"].append(hook)
-            repos_hooks[repo]["hooks"][hook["id"]] = hook
-
-
-class Edit:
-    r"""
-    Edit a file.
-
-    Usage:
-
-    ```python
-    with Edit("file.txt") as file:
-        file.content = "Header\n" + file.content
-    ```
-    """
-
-    def __init__(
-        self,
-        filename: str,
-        pre_commit_repo: Optional[str] = None,
-        pre_commit_rev: Optional[str] = None,
-        pre_commit_hook: Optional[HookDefinition] = None,
-    ) -> None:
-        """Initialize."""
-        self.filename = filename
-        self.pre_commit_repo = pre_commit_repo
-        self.pre_commit_rev = pre_commit_rev
-        self.pre_commit_hook = pre_commit_hook
-        self.exists = os.path.exists(filename)
-        if not self.exists:
-            with open(filename, "w", encoding="utf-8") as opened_file:
-                pass
-        with open(self.filename, encoding="utf-8") as opened_file:
-            self.content = opened_file.read()
-            self.original_content = self.content
-
-    def __enter__(self) -> "Edit":
-        return self
-
-    def __exit__(
-        self,
-        exc_type: Optional[Type[BaseException]],
-        exc_val: Optional[BaseException],
-        exc_tb: Optional[TracebackType],
-    ) -> Literal[False]:
-        del exc_tb
-
-        if exc_type is not None:
-            print("=" * 30)
-            print(type(self).__name__)
-            print(exc_type.__name__)
-            print(exc_val)
-            traceback.print_exc()
-
-        if not self.exists and not self.content:
-            os.remove(self.filename)
-            return False
-
-        if self.content != self.original_content:
-            if (
-                self.pre_commit_repo is not None
-                and self.pre_commit_rev is not None
-                and self.pre_commit_hook is not None
-            ):
-                add_pre_commit_hook(self.pre_commit_repo, self.pre_commit_rev, self.pre_commit_hook)
-            with open(self.filename, "w", encoding="utf-8") as opened_file:
-                opened_file.write(self.content)
-
-        if os.path.exists(".pre-commit-config.yaml"):
-            run(["pre-commit", "run", "--files", self.filename], False)
-        return False
-
-
-class EditYAML:
-    """
-    Edit a YAML file by keeping the comments, in a with instruction.
-
-    ```python
-    with EditYAML("file.yaml") as yaml:
-        yaml["key"] = "value"
-    ```
-    """
-
-    original_data: Optional[str]
-
-    def __init__(
-        self,
-        filename: str,
-        width: int = 110,
-        default_flow_style: bool = False,
-        force: bool = False,
-        add_pre_commit_configuration_if_modified: bool = True,
-    ):
-        """Initialize the object."""
-        self.filename = filename
-        self.data: Dict[str, Any] = {}
-        self.yaml = YAML()
-        self.yaml.default_flow_style = default_flow_style
-        self.yaml.width = width  # type: ignore
-        self.force = force
-        self.exists = os.path.exists(filename)
-        self.add_pre_commit_configuration_if_modified = add_pre_commit_configuration_if_modified
-
-    def __enter__(self) -> "EditYAML":
-        """Load the file."""
-        if self.exists:
-            with open(self.filename, encoding="utf-8") as file:
-                self.data = self.yaml.load(file)  # nosec
-        out = io.StringIO()
-        self.yaml.dump(self.data, out)
-        self.original_data = out.getvalue()
-        return self
-
-    def __exit__(
-        self,
-        exc_type: Optional[Type[BaseException]],
-        exc_val: Optional[BaseException],
-        exc_tb: Optional[TracebackType],
-    ) -> Literal[False]:
-        """Save the file if the data has changed."""
-        del exc_tb
-
-        if exc_type is not None:
-            print("=" * 30)
-            print(type(self).__name__)
-            print(exc_type.__name__)
-            print(exc_val)
-            traceback.print_exc()
-
-        if exc_type is None:
-            if not self.exists and not self.data:
-                os.remove(self.filename)
-                return False
-
-            out = io.StringIO()
-            self.yaml.dump(self.data, out)
-            new_data = out.getvalue()
-            if self.force or new_data != self.original_data:
-                if self.add_pre_commit_configuration_if_modified:
-                    add_pre_commit_hook(
-                        "https://github.com/pre-commit/mirrors-prettier",
-                        "v2.7.1",
-                        {"id": "prettier", "additional_dependencies": ["prettier@2.8.4"]},
-                    )
-
-                with open(self.filename, "w", encoding="utf-8") as file_:
-                    file_.write(new_data)
-                if os.path.exists(".pre-commit-config.yaml"):
-                    run(["pre-commit", "run", "--files", self.filename], False)
-        return False
-
-    def __getitem__(self, key: str) -> Any:
-        """Get the value for the key."""
-        return self.data[key]
-
-    def __setitem__(self, key: str, value: Any) -> None:
-        """Set the value for the key."""
-        self.data[key] = value
-
-    def __delitem__(self, key: str) -> None:
-        """Delete the key."""
-        del self.data[key]
-
-    def __contains__(self, key: str) -> bool:
-        """Check if the key is in the data."""
-        return key in self.data
-
-    def __iter__(self) -> Iterator[str]:
-        """Iterate over the keys."""
-        return iter(self.data)
-
-    def __len__(self) -> int:
-        """Return the number of keys."""
-        return len(self.data)
-
-    def get(self, key: str, default: Any = None) -> Any:
-        """Get the value for the key."""
-        return self.data.get(key, default)
-
-    def setdefault(self, key: str, default: Any = None) -> Any:
-        """Set the default value for the key."""
-        return self.data.setdefault(key, default)
 
 
 def copy_file(from_: str, to_: str, only_if_already_exists: bool = True) -> None:
