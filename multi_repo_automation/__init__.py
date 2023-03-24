@@ -26,6 +26,7 @@ import yaml
 from identify import identify
 
 from multi_repo_automation.editor import Edit  # noqa
+from multi_repo_automation.editor import EditConfig  # noqa
 from multi_repo_automation.editor import EditTOML  # noqa
 from multi_repo_automation.editor import EditYAML  # noqa
 from multi_repo_automation.editor import add_pre_commit_hook  # noqa
