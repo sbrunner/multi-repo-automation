@@ -69,7 +69,12 @@ def add_pre_commit_hook(repo: str, rev: str, hook: HookDefinition) -> None:
         else:
             current_dependency_base = set()
             for dependency in repos_hooks[repo]["hooks"][hook["id"]].get("additional_dependencies", []):
-                current_dependency_base.add(dependency.split("@")[0])
+                if "@" in dependency:
+                    current_dependency_base.add(dependency.split("@")[0])
+                elif "==" in dependency:
+                    current_dependency_base.add(dependency.split("==")[0])
+                else:
+                    current_dependency_base.add(dependency)
             for dependency in hook.get("additional_dependencies", []):
                 dependency_base = dependency.split("@")[0]
                 if dependency_base not in current_dependency_base:
@@ -172,7 +177,7 @@ class Edit(_Edit):
 
     def load(self, content: io.TextIOWrapper) -> Any:
         """Load the content."""
-        return content
+        return content.read()
 
     def dump(self, data: Any) -> str:
         """Load the content."""
