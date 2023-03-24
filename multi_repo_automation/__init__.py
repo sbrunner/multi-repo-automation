@@ -26,6 +26,7 @@ import yaml
 from identify import identify
 
 from multi_repo_automation.editor import Edit  # noqa
+from multi_repo_automation.editor import EditConfig  # noqa
 from multi_repo_automation.editor import EditTOML  # noqa
 from multi_repo_automation.editor import EditYAML  # noqa
 from multi_repo_automation.editor import add_pre_commit_hook  # noqa
@@ -320,6 +321,15 @@ def create_pull_request(
         run(["git", "push", "--force"])
     else:
         run(["git", "push"])
+    branch_name = run(["git", "rev-parse", "--abbrev-ref", "HEAD"], stdout=subprocess.PIPE).stdout.strip()
+    run(
+        [
+            "git",
+            "branch",
+            f"--set-upstream-to=origin/{branch_name}",
+            branch_name,
+        ],
+    )
 
     url_proc = run(cmd, False, stdout=subprocess.PIPE)
     url = url_proc.stdout.strip()

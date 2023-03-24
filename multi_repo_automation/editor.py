@@ -5,7 +5,20 @@ import os
 import traceback
 from abc import abstractmethod
 from types import TracebackType
-from typing import Any, Dict, Iterator, List, Literal, Optional, Type, cast
+from typing import (
+    Any,
+    Dict,
+    ItemsView,
+    Iterator,
+    KeysView,
+    List,
+    Literal,
+    Optional,
+    Tuple,
+    Type,
+    ValuesView,
+    cast,
+)
 
 import tomlkit
 from configupdater import ConfigUpdater
@@ -65,99 +78,36 @@ def add_pre_commit_hook(repo: str, rev: str, hook: HookDefinition) -> None:
                     )
 
 
-class Edit:
-    r"""
-    Edit a file.
-
-    Usage:
-
-    ```python
-    with Edit("file.txt") as file:
-        file.content = "Header\n" + file.content
-    ```
-    """
-
-    def __init__(
-        self,
-        filename: str,
-        pre_commit_repo: Optional[str] = None,
-        pre_commit_rev: Optional[str] = None,
-        pre_commit_hook: Optional[HookDefinition] = None,
-    ) -> None:
-        """Initialize."""
-        self.filename = filename
-        self.pre_commit_repo = pre_commit_repo
-        self.pre_commit_rev = pre_commit_rev
-        self.pre_commit_hook = pre_commit_hook
-        self.exists = os.path.exists(filename)
-        if not self.exists:
-            with open(filename, "w", encoding="utf-8") as opened_file:
-                pass
-        with open(self.filename, encoding="utf-8") as opened_file:
-            self.content = opened_file.read()
-            self.original_content = self.content
-
-    def __enter__(self) -> "Edit":
-        return self
-
-    def __exit__(
-        self,
-        exc_type: Optional[Type[BaseException]],
-        exc_val: Optional[BaseException],
-        exc_tb: Optional[TracebackType],
-    ) -> Literal[False]:
-        del exc_tb
-
-        if exc_type is not None:
-            print("=" * 30)
-            print(type(self).__name__)
-            print(exc_type.__name__)
-            print(exc_val)
-            traceback.print_exc()
-
-        if not self.exists and not self.content:
-            os.remove(self.filename)
-            return False
-
-        if self.content != self.original_content:
-            if (
-                self.pre_commit_repo is not None
-                and self.pre_commit_rev is not None
-                and self.pre_commit_hook is not None
-            ):
-                add_pre_commit_hook(self.pre_commit_repo, self.pre_commit_rev, self.pre_commit_hook)
-            with open(self.filename, "w", encoding="utf-8") as opened_file:
-                opened_file.write(self.content)
-
-        if os.path.exists(".pre-commit-config.yaml"):
-            run(["pre-commit", "run", "--files", self.filename], False)
-        return False
-
-
-class _EditDict:
-    data: Dict[str, Any]
-
-    original_data: Optional[str]
+class _Edit:
+    filename: str
+    data: Any
+    force: bool
+    exists: bool
+    add_pre_commit_configuration_if_modified: bool
+    original_data: str
+    run_pre_commit: bool
 
     def __init__(
         self,
         filename: str,
         force: bool = False,
         add_pre_commit_configuration_if_modified: bool = True,
+        run_pre_commit: bool = True,
     ):
         """Initialize the object."""
         self.filename = filename
-        self.data: Dict[str, Any] = {}
         self.force = force
         self.exists = os.path.exists(filename)
         self.add_pre_commit_configuration_if_modified = add_pre_commit_configuration_if_modified
+        self.run_pre_commit = run_pre_commit
 
-    def __enter__(self) -> "_EditDict":
-        """Load the file."""
         if self.exists:
             with open(self.filename, encoding="utf-8") as file:
                 self.data = self.load(file)  # nosec
         self.original_data = self.dump(self.data)
+
+    def __enter__(self) -> "_Edit":
+        """Load the file."""
         return self
 
     def __exit__(
@@ -188,9 +138,50 @@ class _EditDict:
 
                 with open(self.filename, "w", encoding="utf-8") as file_:
                     file_.write(new_data)
-                if os.path.exists(".pre-commit-config.yaml"):
+                if os.path.exists(".pre-commit-config.yaml") and self.run_pre_commit:
                     run(["pre-commit", "run", "--files", self.filename], False)
         return False
+
+    @abstractmethod
+    def load(self, content: io.TextIOWrapper) -> Any:
+        """Load the content."""
+        del content
+        raise NotImplementedError()
+
+    @abstractmethod
+    def dump(self, data: Any) -> str:
+        """Load the content."""
+        del data
+        raise NotImplementedError()
+
+    def add_pre_commit_hook(self) -> None:
+        """Add the pre-commit hook."""
+
+
+class Edit(_Edit):
+    r"""
+    Edit a text file.
+
+    Usage:
+
+    ```python
+    with Edit("file.txt") as file:
+        file.content = "Header\n" + file.content
+    ```
+    """
+
+    def load(self, content: io.TextIOWrapper) -> Any:
+        """Load the content."""
+        return content
+
+    def dump(self, data: Any) -> str:
+        """Load the content."""
+        assert isinstance(data, str)
+        return data
+
+
+class _EditDict(_Edit):
+    data: Dict[str, Any]
 
     @abstractmethod
     def load(self, content: io.TextIOWrapper) -> Dict[str, Any]:
@@ -239,6 +230,30 @@ class _EditDict:
         """Set the default value for the key."""
         return self.data.setdefault(key, default)
 
+    def keys(self) -> KeysView[str]:
+        """Return the keys."""
+        return self.data.keys()
+
+    def values(self) -> ValuesView[Any]:
+        """Return the values."""
+        return self.data.values()
+
+    def items(self) -> ItemsView[str, Any]:
+        """Return the items."""
+        return self.data.items()
+
+    def pop(self, key: str, default: Any = None) -> Any:
+        """Pop the key."""
+        return self.data.pop(key, default)
+
+    def popitem(self) -> Tuple[str, Any]:
+        """Pop an item."""
+        return self.data.popitem()
+
+    def update(self, other: Dict[str, Any]) -> None:
+        """Update the data."""
+        self.data.update(other)
+
 
 class EditYAML(_EditDict):
     """
@@ -256,17 +271,20 @@ class EditYAML(_EditDict):
         width: int = 110,
         default_flow_style: bool = False,
         preserve_quotes: bool = True,
-        force: bool = False,
-        add_pre_commit_configuration_if_modified: bool = True,
+        mapping: int = 2,
+        sequence: int = 4,
+        offset: int = 2,
+        **kwargs: Any,
     ):
         """Initialize the object."""
-
-        super().__init__(filename, force, add_pre_commit_configuration_if_modified)
 
         self.yaml = YAML()
         self.yaml.default_flow_style = default_flow_style
         self.yaml.width = width  # type: ignore
         self.yaml.preserve_quotes = preserve_quotes  # type: ignore
+        self.yaml.indent(mapping=mapping, sequence=sequence, offset=offset)
+
+        super().__init__(filename, **kwargs)
 
     def load(self, content: io.TextIOWrapper) -> Dict[str, Any]:
         """Load the file."""
@@ -328,26 +346,25 @@ class EditConfig(_EditDict):
     ```
     """
 
+    updater: ConfigUpdater
+
     def __init__(
         self,
         filename: str,
-        force: bool = False,
-        add_pre_commit_configuration_if_modified: bool = True,
+        **kwargs: Any,
     ):
         """Initialize the object."""
 
-        super().__init__(filename, force, add_pre_commit_configuration_if_modified)
-
         self.updater = ConfigUpdater()
+        super().__init__(filename, **kwargs)
 
-    def load(self, content: io.TextIOWrapper) -> Dict[str, Any]:
+    def load(self, content: io.TextIOWrapper) -> Any:
         """Load the file."""
-        return cast(Dict[str, Any], self.updater.read_string(content.read()))
+        return self.updater.read_string(content.read())
 
-    def dump(self, data: Dict[str, Any]) -> str:
+    def dump(self, data: Any) -> str:
         """Load the file."""
-        del data
 
         out = io.StringIO()
-        self.updater.write(out)
+        data.write(out)
         return out.getvalue()
