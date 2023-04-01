@@ -41,9 +41,9 @@ python = ">=3.8,<4.0"
 PyYAML = "6.0"
 requests = "2.28.2"
 "ruamel.yaml" = "0.17.21"
-identify = "2.5.18"
-c2cciutils = { version = "1.5.0", optional = true }
-tomlkit = "0.11.6"
+identify = "2.5.22"
+c2cciutils = { version = "1.5.2", optional = true }
+tomlkit = "0.11.7"
 configupdater = "3.1.1"
 
 [tool.poetry.extras]
@@ -51,8 +51,8 @@ update_stabilization_branches = ["c2cciutils"]
 
 [tool.poetry.group.dev.dependencies]
 prospector = { extras = ["with_bandit", "with_mypy", "with_pyroma"], version = "1.9.0" }
-types-PyYAML = "6.0.12.8"
-types-requests = "2.28.11.15"
+types-PyYAML = "6.0.12.9"
+types-requests = "2.28.11.17"
 
 [build-system]
 requires = ["poetry-core>=1.0.0", "poetry-dynamic-versioning", "poetry-plugin-tweak-dependencies-version"]
