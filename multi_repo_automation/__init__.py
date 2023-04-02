@@ -204,20 +204,6 @@ class CreateBranch:
 
     def __enter__(self, *_: Any) -> None:
         """Create the branch."""
-        run(
-            [
-                "docker",
-                "run",
-                "--rm",
-                f"--volume={os.getcwd()}:/src",
-                "sbrunner/vim",
-                "chown",
-                f"{run(['id', '-u'], stdout=subprocess.PIPE).stdout.strip()}:"
-                f"{run(['id', '-g'], stdout=subprocess.PIPE).stdout.strip()}",
-                "-R",
-                ".",
-            ],
-        )
         for folder in self.repo.get("folders_to_clean") or []:
             shutil.rmtree(folder, ignore_errors=True)
         if self.repo.get("clean", True):
@@ -361,20 +347,6 @@ class Branch:
 
     def __enter__(self, *_: Any) -> None:
         """Create a new branch."""
-        run(
-            [
-                "docker",
-                "run",
-                "--rm",
-                f"--volume={os.getcwd()}:/src",
-                "sbrunner/vim",
-                "chown",
-                f"{run(['id', '-u'], stdout=subprocess.PIPE).stdout.strip()}:"
-                f"{run(['id', '-g'], stdout=subprocess.PIPE).stdout.strip()}",
-                "-R",
-                ".",
-            ],
-        )
         for folder in self.repo.get("folders_to_clean") or []:
             shutil.rmtree(folder, ignore_errors=True)
         if self.repo.get("clean", True):
