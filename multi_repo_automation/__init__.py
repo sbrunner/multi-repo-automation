@@ -448,7 +448,12 @@ def copy_file(from_: str, to_: str, only_if_already_exists: bool = True) -> None
 
 def git_grep(text: str, args: Optional[List[str]] = None) -> Set[str]:
     """Grep the code against the text."""
-    proc = run(["git", "grep", *(args or []), "--", text], stdout=subprocess.PIPE, encoding="utf-8")
+    proc = run(
+        ["git", "grep", *(args or []), "--", text],
+        exit_on_error=False,
+        stdout=subprocess.PIPE,
+        encoding="utf-8",
+    )
     files = set()
     for line in proc.stdout.split("\n"):
         if line and not line.startswith("Binary file "):
