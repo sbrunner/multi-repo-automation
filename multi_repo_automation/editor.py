@@ -109,6 +109,8 @@ class _Edit:
         if self.exists:
             with open(self.filename, encoding="utf-8") as file:
                 self.data = self.load(file)  # nosec
+        else:
+            self.data = self.get_empty()
         self.original_data = self.dump(self.data)
 
     def __enter__(self) -> "_Edit":
@@ -159,6 +161,10 @@ class _Edit:
         del data
         raise NotImplementedError()
 
+    @abstractmethod
+    def get_empty(self) -> Any:
+        """Get the empty data."""
+
     def add_pre_commit_hook(self) -> None:
         """Add the pre-commit hook."""
 
@@ -184,6 +190,10 @@ class Edit(_Edit):
         assert isinstance(data, str)
         return data
 
+    def get_empty(self) -> Any:
+        """Get the empty data."""
+        return ""
+
 
 class _EditDict(_Edit):
     data: Dict[str, Any]
@@ -199,6 +209,10 @@ class _EditDict(_Edit):
         """Load the content."""
         del data
         raise NotImplementedError()
+
+    def get_empty(self) -> Dict[str, Any]:
+        """Get the empty data."""
+        return {}
 
     def add_pre_commit_hook(self) -> None:
         """Add the pre-commit hook."""
@@ -373,3 +387,7 @@ class EditConfig(_EditDict):
         out = io.StringIO()
         data.write(out)
         return out.getvalue()
+
+    def get_empty(self) -> Any:
+        """Get the empty data."""
+        return self.updater

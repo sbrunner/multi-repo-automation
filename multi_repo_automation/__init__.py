@@ -204,20 +204,6 @@ class CreateBranch:
 
     def __enter__(self, *_: Any) -> None:
         """Create the branch."""
-        run(
-            [
-                "docker",
-                "run",
-                "--rm",
-                f"--volume={os.getcwd()}:/src",
-                "sbrunner/vim",
-                "chown",
-                f"{run(['id', '-u'], stdout=subprocess.PIPE).stdout.strip()}:"
-                f"{run(['id', '-g'], stdout=subprocess.PIPE).stdout.strip()}",
-                "-R",
-                ".",
-            ],
-        )
         for folder in self.repo.get("folders_to_clean") or []:
             shutil.rmtree(folder, ignore_errors=True)
         if self.repo.get("clean", True):
@@ -361,20 +347,6 @@ class Branch:
 
     def __enter__(self, *_: Any) -> None:
         """Create a new branch."""
-        run(
-            [
-                "docker",
-                "run",
-                "--rm",
-                f"--volume={os.getcwd()}:/src",
-                "sbrunner/vim",
-                "chown",
-                f"{run(['id', '-u'], stdout=subprocess.PIPE).stdout.strip()}:"
-                f"{run(['id', '-g'], stdout=subprocess.PIPE).stdout.strip()}",
-                "-R",
-                ".",
-            ],
-        )
         for folder in self.repo.get("folders_to_clean") or []:
             shutil.rmtree(folder, ignore_errors=True)
         if self.repo.get("clean", True):
@@ -476,7 +448,12 @@ def copy_file(from_: str, to_: str, only_if_already_exists: bool = True) -> None
 
 def git_grep(text: str, args: Optional[List[str]] = None) -> Set[str]:
     """Grep the code against the text."""
-    proc = run(["git", "grep", *(args or []), "--", text], stdout=subprocess.PIPE, encoding="utf-8")
+    proc = run(
+        ["git", "grep", *(args or []), "--", text],
+        exit_on_error=False,
+        stdout=subprocess.PIPE,
+        encoding="utf-8",
+    )
     files = set()
     for line in proc.stdout.split("\n"):
         if line and not line.startswith("Binary file "):

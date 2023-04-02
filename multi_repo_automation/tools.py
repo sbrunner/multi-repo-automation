@@ -33,7 +33,7 @@ class RepoRepresentation(TypedDict):
 
 def run(cmd: List[str], exit_on_error: bool = True, **kwargs: Any) -> subprocess.CompletedProcess[str]:
     """Run a command."""
-    print(shlex.join(cmd))
+    print(f"$ {shlex.join(cmd)}")
     sys.stdout.flush()
     if "stdout" in kwargs and kwargs["stdout"] == subprocess.PIPE and "encoding" not in kwargs:
         kwargs["encoding"] = "utf-8"
