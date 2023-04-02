@@ -519,7 +519,7 @@ def update_stabilization_branches(repo: Repo) -> None:
     security_response = requests.get(
         f"https://raw.githubusercontent.com/{repo['name']}/{repo.get('master_branch', 'master')}/SECURITY.md",
         headers=c2cciutils.add_authorization_header({}),
-        timeout=int(os.environ.get("C2CCIUTILS_TIMEOUT", "30")),
+        timeout=30,
     )
     if security_response.ok:
         security = c2cciutils.security.Security(security_response.text)
