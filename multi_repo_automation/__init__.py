@@ -7,6 +7,9 @@ import shutil
 import subprocess  # nosec
 import tempfile
 import traceback
+from distutils.version import (  # pylint: disable=deprecated-module,useless-suppression
+    LooseVersion,
+)
 from types import TracebackType
 from typing import (
     Any,
@@ -510,11 +513,9 @@ def update_stabilization_branches(repo: Repo) -> None:
             ):
                 versions.add(data[version_index])
         if versions:
-            repo["stabilization_branches"] = list(versions)
-
-    for branch_name in repo.get("stabilization_branches") or []:
-        with Branch(repo, branch_name, push=False):
-            pass
+            version_list = list(versions)
+            version_list.sort(key=LooseVersion)
+            repo["stabilization_branches"] = version_list
 
 
 def do_on_base_branches(
@@ -749,5 +750,21 @@ def main(
     app.run()
 
 
-if __name__ == "__main__":
-    main()
+def update_stabilization_branches_main():
+    """Update the stabilization branches."""
+    user_config = {}
+    if os.path.exists(CONFIG_PATH):
+        with open(CONFIG_PATH, encoding="utf-8") as config_file:
+            user_config = yaml.load(config_file, Loader=yaml.SafeLoader)
+    repos_filename: str = user_config.get("repos_filename", "repos.yaml")
+
+    args_parser = argparse.ArgumentParser(description="Update the stabilization branches.")
+    args_parser.add_argument(
+        "--repositories", default=repos_filename, help="A YAML file that contains the repositories."
+    )
+    args_parser.add_argument("--diff", action="store_true", help="Only show the diff")
+    args = args_parser.parse_args()
+
+    with EditYAML(args.repositories, diff=args.diff, run_pre_commit=False) as repos:
+        for repo in repos:
+            update_stabilization_branches(repo)

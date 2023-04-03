@@ -1,7 +1,9 @@
 """The provided editors."""
 
+import difflib
 import io
 import os
+import sys
 import traceback
 from abc import abstractmethod
 from types import TracebackType
@@ -98,6 +100,7 @@ class _Edit:
         force: bool = False,
         add_pre_commit_configuration_if_modified: bool = True,
         run_pre_commit: bool = True,
+        diff: bool = False,
     ):
         """Initialize the object."""
         self.filename = filename
@@ -105,6 +108,7 @@ class _Edit:
         self.exists = os.path.exists(filename)
         self.add_pre_commit_configuration_if_modified = add_pre_commit_configuration_if_modified
         self.run_pre_commit = run_pre_commit
+        self.diff = diff
 
         if self.exists:
             with open(self.filename, encoding="utf-8") as file:
@@ -143,10 +147,18 @@ class _Edit:
                 if self.add_pre_commit_configuration_if_modified:
                     self.add_pre_commit_hook()
 
-                with open(self.filename, "w", encoding="utf-8") as file_:
-                    file_.write(new_data)
-                if os.path.exists(".pre-commit-config.yaml") and self.run_pre_commit:
-                    run(["pre-commit", "run", "--files", self.filename], False)
+                if self.diff:
+                    sys.stdout.writelines(
+                        difflib.unified_diff(
+                            self.original_data.splitlines(keepends=True),
+                            new_data.splitlines(keepends=True),
+                        )
+                    )
+                else:
+                    with open(self.filename, "w", encoding="utf-8") as file_:
+                        file_.write(new_data)
+                    if os.path.exists(".pre-commit-config.yaml") and self.run_pre_commit:
+                        run(["pre-commit", "run", "--files", self.filename], False)
         return False
 
     @abstractmethod
