@@ -22,6 +22,7 @@ from typing import (
     Tuple,
     Type,
     TypedDict,
+    cast,
 )
 
 import requests
@@ -754,7 +755,7 @@ def main(
     app.run()
 
 
-def update_stabilization_branches_main():
+def update_stabilization_branches_main() -> None:
     """Update the stabilization branches."""
     user_config = {}
     if os.path.exists(CONFIG_PATH):
@@ -770,5 +771,6 @@ def update_stabilization_branches_main():
     args = args_parser.parse_args()
 
     with EditYAML(args.repositories, diff=args.diff, run_pre_commit=False) as repos:
+        assert isinstance(repos, EditYAML)
         for repo in repos:
-            update_stabilization_branches(repo)
+            update_stabilization_branches(cast(Repo, repo))
