@@ -211,7 +211,11 @@ class CreateBranch:
             shutil.rmtree(folder, ignore_errors=True)
         if self.repo.get("clean", True):
             run(["git", "clean", "-dfX"])
-            proc = run(["git", "stash", "--all"], stdout=subprocess.PIPE, exit_on_error=False)
+            proc = run(
+                ["git", "stash", "--all", "--message=Stashed by multi repo automation"],
+                stdout=subprocess.PIPE,
+                exit_on_error=False,
+            )
             self.has_stashed = proc.stdout.strip() != "No local changes to save"
         else:
             proc = run(["git", "stash"], stdout=subprocess.PIPE, encoding="utf-8", env={})
