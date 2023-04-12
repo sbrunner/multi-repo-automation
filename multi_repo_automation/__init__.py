@@ -211,7 +211,7 @@ class CreateBranch:
         for folder in self.repo.get("folders_to_clean") or []:
             shutil.rmtree(folder, ignore_errors=True)
         if self.repo.get("clean", True):
-            run(["git", "clean", "-dfX"])
+            run(["git", "clean", "-dfX"], auto_fix_owner=True)
             proc = run(
                 ["git", "stash", "--all", "--message=Stashed by multi repo automation"],
                 stdout=subprocess.PIPE,
@@ -235,6 +235,7 @@ class CreateBranch:
                     self.new_branch_name,
                     f"origin/{self.base_branch}",
                 ],
+                auto_fix_owner=True,
             )
         run(["git", "status"])
 
