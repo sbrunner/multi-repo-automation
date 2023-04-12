@@ -22,6 +22,7 @@ from typing import (
     Tuple,
     Type,
     TypedDict,
+    cast,
 )
 
 import requests
@@ -210,26 +211,30 @@ class CreateBranch:
         for folder in self.repo.get("folders_to_clean") or []:
             shutil.rmtree(folder, ignore_errors=True)
         if self.repo.get("clean", True):
-            run(["git", "clean", "-dfX"])
-            proc = run(["git", "stash", "--all"], stdout=subprocess.PIPE, exit_on_error=False)
+            run(["git", "clean", "-dfX"], auto_fix_owner=True)
+            proc = run(
+                ["git", "stash", "--all", "--message=Stashed by multi repo automation"],
+                stdout=subprocess.PIPE,
+                exit_on_error=False,
+            )
             self.has_stashed = proc.stdout.strip() != "No local changes to save"
         else:
             proc = run(["git", "stash"], stdout=subprocess.PIPE, encoding="utf-8", env={})
             self.has_stashed = proc.stdout.strip() != "No local changes to save"
         run(["git", "fetch"])
-        run(["git", "checkout", self.repo.get("master_branch") or "master"])
         if self.new_branch_name == self.old_branch_name:
-            run(["git", "reset", "--hard", f"origin/{self.base_branch}", "--"])
+            run(["git", "reset", "--hard", f"{self.repo.get('remote', 'origin')}/{self.base_branch}", "--"])
         else:
-            run(["git", "branch", "--delete", "--force", self.new_branch_name], False)
+            run(["git", "branch", "--delete", "--force", self.new_branch_name], exit_on_error=False)
             run(
                 [
                     "git",
                     "checkout",
                     "-b",
                     self.new_branch_name,
-                    f"origin/{self.base_branch}",
+                    f"{self.repo.get('remote', 'origin')}/{self.base_branch}",
                 ],
+                auto_fix_owner=True,
             )
         run(["git", "status"])
 
@@ -306,16 +311,18 @@ def create_pull_request(
     else:
         cmd.append("--fill")
 
-    if force:
-        run(["git", "push", "--force"])
-    else:
-        run(["git", "push"])
+    remote = repo.get("remote", "origin")
+    assert isinstance(remote, str)
     branch_name = run(["git", "rev-parse", "--abbrev-ref", "HEAD"], stdout=subprocess.PIPE).stdout.strip()
+    if force:
+        run(["git", "push", "--force", remote, f"HEAD:{branch_name}"])
+    else:
+        run(["git", "push", remote, f"HEAD:{branch_name}"])
     run(
         [
             "git",
             "branch",
-            f"--set-upstream-to=origin/{branch_name}",
+            f"--set-upstream-to={remote}/{branch_name}",
             branch_name,
         ],
     )
@@ -361,7 +368,15 @@ class Branch:
         if self.old_branch_name != self.branch_name:
             run(["git", "branch", "--delete", "--force", self.branch_name], False)
             run(
-                ["git", "checkout", "-b", self.branch_name, "--track", f"origin/{self.branch_name}"],
+                [
+                    "git",
+                    "checkout",
+                    "-b",
+                    self.branch_name,
+                    f"{self.repo.get('remote', 'origin')}/{self.repo.get('master_branch', 'branch')}",
+                    "--track",
+                    f"{self.repo.get('remote', 'origin')}/{self.branch_name}",
+                ],
             )
         else:
             run(["git", "pull", "--rebase"])
@@ -488,7 +503,7 @@ def edit(files: List[str]) -> None:
             os.remove(file)
 
 
-def update_stabilization_branches(repo: Repo) -> None:
+def get_stabilization_branches(repo: Repo) -> List[str]:
     """
     Update the list of stabilization branches in the repo.
 
@@ -496,6 +511,7 @@ def update_stabilization_branches(repo: Repo) -> None:
     """
     import c2cciutils.security  # pylint: disable=import-outside-toplevel
 
+    stabilization_branches = []
     security_response = requests.get(
         f"https://raw.githubusercontent.com/{repo['name']}/{repo.get('master_branch', 'master')}/SECURITY.md",
         headers=c2cciutils.add_authorization_header({}),
@@ -513,9 +529,20 @@ def update_stabilization_branches(repo: Repo) -> None:
             ):
                 versions.add(data[version_index])
         if versions:
-            version_list = list(versions)
-            version_list.sort(key=LooseVersion)
-            repo["stabilization_branches"] = version_list
+            stabilization_branches = list(versions)
+            stabilization_branches.sort(key=LooseVersion)
+    return stabilization_branches
+
+
+def update_stabilization_branches(repo: Repo) -> None:
+    """
+    Update the list of stabilization branches in the repo.
+
+    From the     `SECURITY.md` file.
+    """
+    stabilization_branches = get_stabilization_branches(repo)
+    if stabilization_branches:
+        repo["stabilization_branches"] = stabilization_branches
 
 
 def do_on_base_branches(
@@ -750,7 +777,7 @@ def main(
     app.run()
 
 
-def update_stabilization_branches_main():
+def update_stabilization_branches_main() -> None:
     """Update the stabilization branches."""
     user_config = {}
     if os.path.exists(CONFIG_PATH):
@@ -766,5 +793,6 @@ def update_stabilization_branches_main():
     args = args_parser.parse_args()
 
     with EditYAML(args.repositories, diff=args.diff, run_pre_commit=False) as repos:
+        assert isinstance(repos, EditYAML)
         for repo in repos:
-            update_stabilization_branches(repo)
+            update_stabilization_branches(cast(Repo, repo))

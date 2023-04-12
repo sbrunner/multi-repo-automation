@@ -53,6 +53,7 @@ def add_pre_commit_hook(repo: str, rev: str, hook: HookDefinition) -> None:
     with EditYAML(
         ".pre-commit-config.yaml", add_pre_commit_configuration_if_modified=False
     ) as pre_commit_config:
+        assert isinstance(pre_commit_config, EditYAML)
         repos_hooks: Dict[str, RepoRepresentation] = {}
         for repo_ in cast(List[RepoDefinition], pre_commit_config.setdefault("repos", [])):
             repos_hooks.setdefault(
