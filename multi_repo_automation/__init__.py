@@ -503,7 +503,7 @@ def edit(files: List[str]) -> None:
             os.remove(file)
 
 
-def update_stabilization_branches(repo: Repo) -> None:
+def get_stabilization_branches(repo: Repo) -> List[str]:
     """
     Update the list of stabilization branches in the repo.
 
@@ -511,6 +511,7 @@ def update_stabilization_branches(repo: Repo) -> None:
     """
     import c2cciutils.security  # pylint: disable=import-outside-toplevel
 
+    stabilization_branches = []
     security_response = requests.get(
         f"https://raw.githubusercontent.com/{repo['name']}/{repo.get('master_branch', 'master')}/SECURITY.md",
         headers=c2cciutils.add_authorization_header({}),
@@ -528,9 +529,20 @@ def update_stabilization_branches(repo: Repo) -> None:
             ):
                 versions.add(data[version_index])
         if versions:
-            version_list = list(versions)
-            version_list.sort(key=LooseVersion)
-            repo["stabilization_branches"] = version_list
+            stabilization_branches = list(versions)
+            stabilization_branches.sort(key=LooseVersion)
+    return stabilization_branches
+
+
+def update_stabilization_branches(repo: Repo) -> None:
+    """
+    Update the list of stabilization branches in the repo.
+
+    From the     `SECURITY.md` file.
+    """
+    stabilization_branches = get_stabilization_branches(repo)
+    if stabilization_branches:
+        repo["stabilization_branches"] = stabilization_branches
 
 
 def do_on_base_branches(
