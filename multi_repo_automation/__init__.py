@@ -208,6 +208,9 @@ class CreateBranch:
 
     def __enter__(self, *_: Any) -> None:
         """Create the branch."""
+        repo = self.repo.get("remote", "origin")
+        assert isinstance(repo, str)
+
         for folder in self.repo.get("folders_to_clean") or []:
             shutil.rmtree(folder, ignore_errors=True)
         if self.repo.get("clean", True):
@@ -221,9 +224,9 @@ class CreateBranch:
         else:
             proc = run(["git", "stash"], stdout=subprocess.PIPE, encoding="utf-8", env={})
             self.has_stashed = proc.stdout.strip() != "No local changes to save"
-        run(["git", "fetch"])
+        run(["git", "fetch", repo])
         if self.new_branch_name == self.old_branch_name:
-            run(["git", "reset", "--hard", f"{self.repo.get('remote', 'origin')}/{self.base_branch}", "--"])
+            run(["git", "reset", "--hard", f"{repo}/{self.base_branch}", "--"])
         else:
             run(["git", "branch", "--delete", "--force", self.new_branch_name], exit_on_error=False)
             run(
@@ -232,7 +235,7 @@ class CreateBranch:
                     "checkout",
                     "-b",
                     self.new_branch_name,
-                    f"{self.repo.get('remote', 'origin')}/{self.base_branch}",
+                    f"{repo}/{self.base_branch}",
                 ],
                 auto_fix_owner=True,
             )
