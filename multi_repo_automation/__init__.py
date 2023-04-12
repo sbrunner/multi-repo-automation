@@ -224,7 +224,7 @@ class CreateBranch:
         run(["git", "fetch"])
         run(["git", "checkout", self.repo.get("master_branch") or "master"])
         if self.new_branch_name == self.old_branch_name:
-            run(["git", "reset", "--hard", f"origin/{self.base_branch}", "--"])
+            run(["git", "reset", "--hard", f"{self.repo.get('remote', 'origin')}/{self.base_branch}", "--"])
         else:
             run(["git", "branch", "--delete", "--force", self.new_branch_name], False)
             run(
@@ -233,7 +233,7 @@ class CreateBranch:
                     "checkout",
                     "-b",
                     self.new_branch_name,
-                    f"origin/{self.base_branch}",
+                    f"{self.repo.get('remote', 'origin')}/{self.base_branch}",
                 ],
                 auto_fix_owner=True,
             )
@@ -321,7 +321,7 @@ def create_pull_request(
         [
             "git",
             "branch",
-            f"--set-upstream-to=origin/{branch_name}",
+            f"--set-upstream-to={remote}/{branch_name}",
             branch_name,
         ],
     )
@@ -367,7 +367,15 @@ class Branch:
         if self.old_branch_name != self.branch_name:
             run(["git", "branch", "--delete", "--force", self.branch_name], False)
             run(
-                ["git", "checkout", "-b", self.branch_name, "--track", f"origin/{self.branch_name}"],
+                [
+                    "git",
+                    "checkout",
+                    "-b",
+                    self.branch_name,
+                    f"{self.repo.get('remote', 'origin')}/{self.repo.get('master_branch', 'branch')}",
+                    "--track",
+                    f"{self.repo.get('remote', 'origin')}/{self.branch_name}",
+                ],
             )
         else:
             run(["git", "pull", "--rebase"])
