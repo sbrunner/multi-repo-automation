@@ -31,6 +31,8 @@ from identify import identify
 
 from multi_repo_automation.editor import Edit  # noqa
 from multi_repo_automation.editor import EditConfig  # noqa
+from multi_repo_automation.editor import EditPreCommitConfig  # noqa
+from multi_repo_automation.editor import EditRenovateConfig  # noqa
 from multi_repo_automation.editor import EditTOML  # noqa
 from multi_repo_automation.editor import EditYAML  # noqa
 from multi_repo_automation.editor import add_pre_commit_hook  # noqa
@@ -55,6 +57,7 @@ class Repo(TypedDict, total=False):
     name: str
     master_branch: str
     stabilization_branches: List[str]
+    stabilization_version_to_branch: Dict[str, str]
     folders_to_clean: List[str]
     clean: bool
 
@@ -208,6 +211,9 @@ class CreateBranch:
 
     def __enter__(self, *_: Any) -> None:
         """Create the branch."""
+        repo = self.repo.get("remote", "origin")
+        assert isinstance(repo, str)
+
         for folder in self.repo.get("folders_to_clean") or []:
             shutil.rmtree(folder, ignore_errors=True)
         if self.repo.get("clean", True):
@@ -221,9 +227,9 @@ class CreateBranch:
         else:
             proc = run(["git", "stash"], stdout=subprocess.PIPE, encoding="utf-8", env={})
             self.has_stashed = proc.stdout.strip() != "No local changes to save"
-        run(["git", "fetch"])
+        run(["git", "fetch", repo])
         if self.new_branch_name == self.old_branch_name:
-            run(["git", "reset", "--hard", f"{self.repo.get('remote', 'origin')}/{self.base_branch}", "--"])
+            run(["git", "reset", "--hard", f"{repo}/{self.base_branch}", "--"])
         else:
             run(["git", "branch", "--delete", "--force", self.new_branch_name], exit_on_error=False)
             run(
@@ -232,7 +238,7 @@ class CreateBranch:
                     "checkout",
                     "-b",
                     self.new_branch_name,
-                    f"{self.repo.get('remote', 'origin')}/{self.base_branch}",
+                    f"{repo}/{self.base_branch}",
                 ],
                 auto_fix_owner=True,
             )
@@ -503,7 +509,7 @@ def edit(files: List[str]) -> None:
             os.remove(file)
 
 
-def get_stabilization_branches(repo: Repo) -> List[str]:
+def get_stabilization_versions(repo: Repo) -> List[str]:
     """
     Update the list of stabilization branches in the repo.
 
@@ -511,7 +517,7 @@ def get_stabilization_branches(repo: Repo) -> List[str]:
     """
     import c2cciutils.security  # pylint: disable=import-outside-toplevel
 
-    stabilization_branches = []
+    stabilization_versions = []
     security_response = requests.get(
         f"https://raw.githubusercontent.com/{repo['name']}/{repo.get('master_branch', 'master')}/SECURITY.md",
         headers=c2cciutils.add_authorization_header({}),
@@ -529,9 +535,21 @@ def get_stabilization_branches(repo: Repo) -> List[str]:
             ):
                 versions.add(data[version_index])
         if versions:
-            stabilization_branches = list(versions)
-            stabilization_branches.sort(key=LooseVersion)
-    return stabilization_branches
+            stabilization_versions = list(versions)
+            stabilization_versions.sort(key=LooseVersion)
+    return stabilization_versions
+
+
+def get_stabilization_branches(repo: Repo) -> List[str]:
+    """
+    Update the list of stabilization branches in the repo.
+
+    From the     `SECURITY.md` file.
+    """
+
+    stabilization_versions = get_stabilization_versions(repo)
+    stabilization_version_to_branch: Dict[str, str] = repo.get("stabilization_version_to_branch", {})
+    return [stabilization_version_to_branch.get(v, v) for v in stabilization_versions]
 
 
 def update_stabilization_branches(repo: Repo) -> None:
