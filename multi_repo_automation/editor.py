@@ -3,6 +3,7 @@
 import difflib
 import io
 import os
+import subprocess  # nosec
 import sys
 import traceback
 from abc import abstractmethod
@@ -18,13 +19,14 @@ from typing import (
     Optional,
     Tuple,
     Type,
+    TypedDict,
     ValuesView,
     cast,
 )
 
+import ruamel.yaml.scalarstring
 import tomlkit
 from configupdater import ConfigUpdater
-from ruamel.yaml import YAML
 
 from multi_repo_automation.tools import (
     HookDefinition,
@@ -310,7 +312,7 @@ class EditYAML(_EditDict):
     ):
         """Initialize the object."""
 
-        self.yaml = YAML()
+        self.yaml = ruamel.yaml.YAML()
         self.yaml.default_flow_style = default_flow_style
         self.yaml.width = width  # type: ignore
         self.yaml.preserve_quotes = preserve_quotes  # type: ignore
@@ -404,3 +406,188 @@ class EditConfig(_EditDict):
     def get_empty(self) -> Any:
         """Get the empty data."""
         return self.updater
+
+
+class PreCommitHook(TypedDict):
+    """Pre-commit hook."""
+
+    id: str
+    alias: str
+    name: str
+    language_version: str
+    files: str
+    exclude: str
+    types: List[str]
+    types_or: List[str]
+    exclude_types: List[str]
+    args: List[str]
+    stages: List[str]
+    additional_dependencies: List[str]
+    allways_run: bool
+    verbose: bool
+    log_file: str
+
+
+class _PreCommitRepo(TypedDict):
+    """Pre-commit repo."""
+
+    repo: str
+    rev: str
+    hooks: List[PreCommitHook]
+
+
+class _RepoHook(TypedDict):
+    """Repo hook."""
+
+    repo: _PreCommitRepo
+    hooks: Dict[str, PreCommitHook]
+
+
+class EditPreCommitConfig(EditYAML):
+    """Edit the pre-commit config file."""
+
+    def __init__(self, filename: str = ".pre-commit-config.yaml", fix_files: bool = True, **kwargs: Any):
+        super().__init__(filename, **kwargs)
+
+        self.repos_hooks: Dict[str, _RepoHook] = {}
+        for repo in self["repos"]:
+            self.repos_hooks.setdefault(
+                repo["repo"], {"repo": repo, "hooks": {hook["id"]: hook for hook in repo["hooks"]}}
+            )
+        for repo in self["repos"]:
+            for hook in repo["hooks"]:
+                for tag in ("files", "excludes"):
+                    if tag in hook and hook[tag].strip().startswith("(?x)"):
+                        hook[tag] = ruamel.yaml.scalarstring.LiteralScalarString(hook[tag].strip())
+
+        if fix_files:
+            self.fix_files()
+
+    def add_repo(self, repo: str, rev: Optional[str] = None) -> None:
+        """Add a repo to the pre-commit config."""
+
+        if rev is None:
+            rev = run(
+                ["gh", "release", "view", f"--repo={repo}", "--json=name", "--template={{.name}}"],
+                stdout=subprocess.PIPE,
+            ).stdout.strip()
+
+        if repo not in self.repos_hooks:
+            repo_obj: _PreCommitRepo = {"repo": repo, "rev": rev, "hooks": []}
+            self["repos"].append(repo_obj)
+
+            self.repos_hooks.setdefault(repo, {"repo": repo_obj, "hooks": {}})
+
+    def add_hook(self, repo: str, hook: PreCommitHook, ci_skip: bool = False) -> None:
+        """Add a hook to the pre-commit config."""
+
+        if hook["id"] not in self.repos_hooks[repo]["hooks"]:
+            self.repos_hooks[repo]["repo"]["hooks"].append(hook)
+            self.repos_hooks[repo]["hooks"][hook["id"]] = hook
+
+            if ci_skip:
+                skip = self.setdefault("ci", {}).setdefault("skip", [])
+                self.setdefault("ci", {})["skip"] = [*skip, hook["id"]]
+
+    def create_files_regex(self, files: List[str], add_start_end: bool = True) -> str:
+        """Create a regex to match the files."""
+        files_joined = "\n  |".join(files)
+        start = "^" if add_start_end else ""
+        end = "$" if add_start_end else ""
+        result = ruamel.yaml.scalarstring.LiteralScalarString(
+            f"""(?x){start}(
+  {files_joined}
+){end}"""
+        )
+
+        return result
+
+    def fix_files(self) -> None:
+        """Fix the files regex."""
+
+        for repo in self.data["repos"]:
+            for hook in repo["hooks"]:
+                for attribute in ("files", "exclude"):
+                    if len(hook.get(attribute, "")) > 60:
+                        attribute_value = hook[attribute]
+
+                        add_start_end = False
+                        if attribute_value.strip().startswith("(?x)"):
+                            attribute_value = attribute_value.strip()[4:]
+                        if attribute_value.strip().startswith("(") and attribute_value.strip().endswith(")"):
+                            files_list = attribute_value.strip()[1:-1].split("|")
+                        elif attribute_value.strip().startswith("(") and attribute_value.strip().endswith(
+                            ")"
+                        ):
+                            files_list = attribute_value.strip()[1:-1].split("|")
+                        elif attribute_value.strip().startswith("^(") and attribute_value.strip().endswith(
+                            ")$"
+                        ):
+                            files_list = attribute_value.strip()[2:-2].split("|")
+                            add_start_end = True
+                        else:
+                            continue
+
+                        hook[attribute] = self.create_files_regex(
+                            [f.strip() for f in files_list], add_start_end=add_start_end
+                        )
+
+
+class EditRenovateConfig(Edit):
+    """
+    Edit the Renovate config file.
+
+    Conserve the comments, consider that we have at least the
+    packageRules, and just before the regexManagers.
+    """
+
+    def __init__(self, filename: str = ".github/renovate.json5", **kwargs: Any):
+        super().__init__(filename, **kwargs)
+
+    def add(self, data: str, test: str) -> None:
+        """Add an other setting to the renovate config."""
+
+        if test in self.data:
+            return
+
+        if "regexManagers" in self.data:
+            index = self.data.rindex("regexManagers")
+            self.data = self.data[:index] + f"{data.strip()}," + self.data[index:]
+
+        elif "packageRules" in self.data:
+            index = self.data.rindex("packageRules")
+            self.data = self.data[:index] + f"{data}," + self.data[index:]
+
+    def add_regex_manager(self, data: str, test: str) -> None:
+        """Add a regex manager to the renovate config."""
+
+        if test in self.data:
+            return
+
+        if "regexManagers" in self.data:
+            if "packageRules" in self.data:
+                index = self.data.rindex("packageRules")
+                index = self.data.rindex("]", 0, index)
+                self.data = self.data[:index] + f"{data.strip()}," + self.data[index:]
+            else:
+                index = self.data.rindex("]")
+                self.data = self.data[:index] + f"{data.strip()}," + self.data[index:]
+        elif "packageRules" in self.data:
+            index = self.data.rindex("packageRules")
+            self.data = self.data[:index] + f"regexManagers: [{data.strip()},]," + self.data[index:]
+        else:
+            index = self.data.rindex("}")
+            self.data = self.data[:index] + f"regexManagers: [{data.strip()},]," + self.data[index:]
+
+    def add_package_rule(self, data: str, test: str) -> None:
+        """Add a package rule to the renovate config."""
+
+        if test in self.data:
+            return
+
+        if "packageRules" in self.data:
+            index = self.data.rindex("]")
+            self.data = self.data[:index] + f"{data.strip()}," + self.data[index:]
+        else:
+            index = self.data.rindex("}")
+            self.data = self.data[:index] + f"packageRules: [{data.strip()},]," + self.data[index:]
