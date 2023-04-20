@@ -2,6 +2,7 @@
 
 import difflib
 import io
+import json
 import os
 import subprocess  # nosec
 import sys
@@ -20,72 +21,18 @@ from typing import (
     Tuple,
     Type,
     TypedDict,
+    Union,
     ValuesView,
     cast,
 )
 
+import ruamel.yaml.comments
 import ruamel.yaml.scalarstring
 import tomlkit
 from configupdater import ConfigUpdater
+from typing_extensions import Required
 
-from multi_repo_automation.tools import (
-    HookDefinition,
-    RepoDefinition,
-    RepoRepresentation,
-    run,
-)
-
-
-def add_pre_commit_hook(repo: str, rev: str, hook: HookDefinition) -> None:
-    """
-    Add the pre-commit hook.
-
-    To check that the configuration is correct.
-
-    Example:
-    -------
-    ```python
-    mra.add_pre_commit_hook(
-        "https://github.com/pre-commit/mirrors-prettier",
-        "v2.7.1",
-        {"id": "prettier", "additional_dependencies": ["prettier@2.8.4"]},
-    )
-    ```
-    """
-    with EditYAML(
-        ".pre-commit-config.yaml", add_pre_commit_configuration_if_modified=False
-    ) as pre_commit_config:
-        assert isinstance(pre_commit_config, EditYAML)
-        repos_hooks: Dict[str, RepoRepresentation] = {}
-        for repo_ in cast(List[RepoDefinition], pre_commit_config.setdefault("repos", [])):
-            repos_hooks.setdefault(
-                repo_["repo"], {"repo": repo_, "hooks": {hook["id"]: hook for hook in repo_["hooks"]}}
-            )
-
-        if repo not in repos_hooks:
-            repo_obj: RepoDefinition = {"repo": repo, "rev": rev, "hooks": []}
-            pre_commit_config["repos"].append(repo_obj)
-
-            repos_hooks.setdefault(repo, {"repo": repo_obj, "hooks": {}})
-
-        if hook["id"] not in repos_hooks[repo]["hooks"]:
-            repos_hooks[repo]["repo"]["hooks"].append(hook)
-            repos_hooks[repo]["hooks"][hook["id"]] = hook
-        else:
-            current_dependency_base = set()
-            for dependency in repos_hooks[repo]["hooks"][hook["id"]].get("additional_dependencies", []):
-                if "@" in dependency:
-                    current_dependency_base.add(dependency.split("@")[0])
-                elif "==" in dependency:
-                    current_dependency_base.add(dependency.split("==")[0])
-                else:
-                    current_dependency_base.add(dependency)
-            for dependency in hook.get("additional_dependencies", []):
-                dependency_base = dependency.split("@")[0]
-                if dependency_base not in current_dependency_base:
-                    repos_hooks[repo]["hooks"][hook["id"]].setdefault("additional_dependencies", []).append(
-                        dependency
-                    )
+from multi_repo_automation.tools import edit, run
 
 
 class _Edit:
@@ -161,7 +108,11 @@ class _Edit:
                     with open(self.filename, "w", encoding="utf-8") as file_:
                         file_.write(new_data)
                     if os.path.exists(".pre-commit-config.yaml") and self.run_pre_commit:
-                        run(["pre-commit", "run", "--files", self.filename], False)
+                        proc = run(["pre-commit", "run", "--files", self.filename], False)
+                        if proc.returncode != 0 and os.environ.get("DEBUG", "false").lower() in ("true", "1"):
+                            proc = run(["pre-commit", "run", "--files", self.filename], False)
+                            if proc.returncode != 0:
+                                edit([self.filename])
         return False
 
     @abstractmethod
@@ -331,11 +282,13 @@ class EditYAML(_EditDict):
         return out.getvalue()
 
     def add_pre_commit_hook(self) -> None:
-        add_pre_commit_hook(
-            "https://github.com/pre-commit/mirrors-prettier",
-            "v2.7.1",
-            {"id": "prettier", "additional_dependencies": ["prettier@2.8.4"]},
-        )
+        with EditPreCommitConfig() as pre_commit_config:
+            assert isinstance(pre_commit_config, EditPreCommitConfig)
+            pre_commit_config.add_repo("https://github.com/pre-commit/mirrors-prettier", "v2.7.1")
+            pre_commit_config.add_hook(
+                "https://github.com/pre-commit/mirrors-prettier",
+                {"id": "prettier", "additional_dependencies": ["prettier@2.8.4"]},
+            )
 
 
 class EditTOML(_EditDict):
@@ -357,17 +310,19 @@ class EditTOML(_EditDict):
         return tomlkit.dumps(data)
 
     def add_pre_commit_hook(self) -> None:
-        add_pre_commit_hook(
-            "https://github.com/pre-commit/mirrors-prettier",
-            "v2.7.1",
-            {
-                "id": "prettier",
-                "additional_dependencies": [
-                    "prettier@2.8.4",
-                    "prettier-plugin-toml@0.3.1",
-                ],
-            },
-        )
+        with EditPreCommitConfig() as pre_commit_config:
+            assert isinstance(pre_commit_config, EditPreCommitConfig)
+            pre_commit_config.add_repo("https://github.com/pre-commit/mirrors-prettier", "v2.7.1")
+            pre_commit_config.add_hook(
+                "https://github.com/pre-commit/mirrors-prettier",
+                {
+                    "id": "prettier",
+                    "additional_dependencies": [
+                        "prettier@2.8.4",
+                        "prettier-plugin-toml@0.3.1",
+                    ],
+                },
+            )
 
 
 class EditConfig(_EditDict):
@@ -408,10 +363,10 @@ class EditConfig(_EditDict):
         return self.updater
 
 
-class PreCommitHook(TypedDict):
+class PreCommitHook(TypedDict, total=False):
     """Pre-commit hook."""
 
-    id: str
+    id: Required[str]
     alias: str
     name: str
     language_version: str
@@ -423,7 +378,7 @@ class PreCommitHook(TypedDict):
     args: List[str]
     stages: List[str]
     additional_dependencies: List[str]
-    allways_run: bool
+    always_run: bool
     verbose: bool
     log_file: str
 
@@ -468,7 +423,7 @@ class EditPreCommitConfig(EditYAML):
 
         if rev is None:
             rev = run(
-                ["gh", "release", "view", f"--repo={repo}", "--json=name", "--template={{.name}}"],
+                ["gh", "release", "view", f"--repo={repo}", "--json=tagName", "--template={{.tagName}}"],
                 stdout=subprocess.PIPE,
             ).stdout.strip()
 
@@ -486,11 +441,27 @@ class EditPreCommitConfig(EditYAML):
             self.repos_hooks[repo]["hooks"][hook["id"]] = hook
 
             if ci_skip:
-                skip = self.setdefault("ci", {}).setdefault("skip", [])
-                self.setdefault("ci", {})["skip"] = [*skip, hook["id"]]
+                self.skip_ci(hook["id"])
+
+    def commented_additional_dependencies(self, dependencies: List[str], type_: str) -> List[str]:
+        """
+        Add comments to the additional dependencies.
+
+        The result will be like this:
+        ```yaml
+        - poetry==1.4.1 # pypi
+        ```
+        The `# pypi` is used by Renovate to know the type of the package.
+        """
+        result = ruamel.yaml.comments.CommentedSeq(dependencies)
+        for index, _ in enumerate(dependencies):
+            result.yaml_add_eol_comment(type_, index)
+        return result
 
     def create_files_regex(self, files: List[str], add_start_end: bool = True) -> str:
         """Create a regex to match the files."""
+        if len(files) == 1:
+            return f"^{files[0]}$" if add_start_end else files[0]
         files_joined = "\n  |".join(files)
         start = "^" if add_start_end else ""
         end = "$" if add_start_end else ""
@@ -501,6 +472,18 @@ class EditPreCommitConfig(EditYAML):
         )
 
         return result
+
+    def skip_ci(self, hook_id: str) -> None:
+        """Add hook in the list that will be ignore by pre-commit.ci."""
+        if hook_id not in self["ci"].setdefault("skip", []):
+            if hasattr(self["ci"]["skip"], "ca"):
+                yaml_hooks = ruamel.yaml.comments.CommentedSeq([*self["ci"]["skip"], hook_id])
+                yaml_hooks._yaml_comment = self["ci"][  # type: ignore # pylint: disable=protected-access
+                    "skip"
+                ].ca
+                self["ci"]["skip"] = yaml_hooks
+            else:
+                self["ci"]["skip"].append(hook_id)
 
     def fix_files(self) -> None:
         """Fix the files regex."""
@@ -550,44 +533,73 @@ class EditRenovateConfig(Edit):
         if test in self.data:
             return
 
+        data = data.strip()
+        data = data.rstrip(",")
+        data = data.rstrip()
+        data = f"{data},"
+
         if "regexManagers" in self.data:
             index = self.data.rindex("regexManagers")
-            self.data = self.data[:index] + f"{data.strip()}," + self.data[index:]
-
+            self.data = self.data[:index] + data + self.data[index:]
         elif "packageRules" in self.data:
             index = self.data.rindex("packageRules")
-            self.data = self.data[:index] + f"{data}," + self.data[index:]
+            self.data = self.data[:index] + data + self.data[index:]
+        else:
+            index = self.data.rindex("}")
+            self.data = self.data[:index] + data + self.data[index:]
 
-    def add_regex_manager(self, data: str, test: str) -> None:
-        """Add a regex manager to the renovate config."""
+    def _clean_data(self, data: Union[str, List[Any], Dict[str, Any]]) -> str:
+        if isinstance(data, dict):
+            data = json.dumps(data, indent=2)
+        if isinstance(data, list):
+            data = json.dumps(data, indent=2)
+            data = data.strip()
+            data = data.lstrip("[")
+            data = data.rstrip("]")
+
+        data = data.strip()
+        data = data.lstrip("{")
+        data = data.lstrip()
+        data = data.rstrip(",")
+        data = data.rstrip()
+        data = data.rstrip("}")
+        data = data.rstrip()
+        return f" {{ {data} }},\n"
+
+    def add_regex_manager(self, data: Union[str, List[Any], Dict[str, Any]], test: str) -> None:
+        """Add a regex manager to the Renovate config."""
 
         if test in self.data:
             return
+
+        data = self._clean_data(data)
 
         if "regexManagers" in self.data:
             if "packageRules" in self.data:
                 index = self.data.rindex("packageRules")
                 index = self.data.rindex("]", 0, index)
-                self.data = self.data[:index] + f"{data.strip()}," + self.data[index:]
+                self.data = self.data[:index] + data + self.data[index:]
             else:
                 index = self.data.rindex("]")
-                self.data = self.data[:index] + f"{data.strip()}," + self.data[index:]
+                self.data = self.data[:index] + data + self.data[index:]
         elif "packageRules" in self.data:
             index = self.data.rindex("packageRules")
-            self.data = self.data[:index] + f"regexManagers: [{data.strip()},]," + self.data[index:]
+            self.data = self.data[:index] + f" regexManagers: [{data}],\n" + self.data[index:]
         else:
             index = self.data.rindex("}")
-            self.data = self.data[:index] + f"regexManagers: [{data.strip()},]," + self.data[index:]
+            self.data = self.data[:index] + f" regexManagers: [{data}],\n" + self.data[index:]
 
-    def add_package_rule(self, data: str, test: str) -> None:
-        """Add a package rule to the renovate config."""
+    def add_package_rule(self, data: Union[str, List[Any], Dict[str, Any]], test: str) -> None:
+        """Add a package rule to the Renovate config."""
 
         if test in self.data:
             return
 
+        data = self._clean_data(data)
+
         if "packageRules" in self.data:
             index = self.data.rindex("]")
-            self.data = self.data[:index] + f"{data.strip()}," + self.data[index:]
+            self.data = self.data[:index] + data + self.data[index:]
         else:
             index = self.data.rindex("}")
-            self.data = self.data[:index] + f"packageRules: [{data.strip()},]," + self.data[index:]
+            self.data = self.data[:index] + f" packageRules: [{data}],\n" + self.data[index:]
