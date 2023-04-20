@@ -41,6 +41,12 @@ jobs:
       - run: pre-commit run --all-files
         env:
           SKIP: poetry-lock
+      - name: Init pypi
+        run: |-
+          echo "[pypi]" > ~/.pypirc
+              echo "username = ${{ secrets.PYPI_USERNAME }}" >> ~/.pypirc
+              echo "password = ${{ secrets.PYPI_PASSWORD }}" >> ~/.pypirc
+              python3 -m pip install --user wheel twine
       - run: git diff && false
         if: failure()
   build:
@@ -76,6 +82,12 @@ jobs:
           poetry run python --version
           [ "$(python3 --version)" == "$(poetry run python --version)" ]
 
+      - name: Init pypi
+        run: |-
+          echo "[pypi]" > ~/.pypirc
+              echo "username = ${{ secrets.PYPI_USERNAME }}" >> ~/.pypirc
+              echo "password = ${{ secrets.PYPI_PASSWORD }}" >> ~/.pypirc
+              python3 -m pip install --user wheel twine
       - run: poetry run prospector --output=pylint --die-on-tool-error
         if: matrix.python-version != '3.8'
 
