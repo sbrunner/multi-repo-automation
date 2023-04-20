@@ -1,6 +1,7 @@
 """Tools to automated changes on multiple repositories."""
 
 import argparse
+import json
 import os
 import re
 import shutil
@@ -845,3 +846,17 @@ def update_stabilization_branches_main() -> None:
         assert isinstance(repos, EditYAML)
         for repo in repos:
             update_stabilization_branches(cast(Repo, repo))
+
+
+def gh(command: str, *args: str) -> str:  # pylint: disable=invalid-name
+    """Run a GitHub command."""
+
+    return run(
+        ["gh", command, f"--repo={get_repo_config()['name']}", *args], stdout=subprocess.PIPE
+    ).stdout.strip()
+
+
+def gh_json(command: str, fields: List[str], *args: str) -> List[Dict[str, str]]:
+    """Get the JSON from a GitHub command."""
+
+    return json.loads(gh(command, f"--json={','.join(fields)}", *args))
