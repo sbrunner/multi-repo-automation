@@ -4,12 +4,13 @@ import argparse
 import os
 import re
 import shutil
-import subprocess  # nosec
+import subprocess
 import tempfile
 import traceback
 from distutils.version import (  # pylint: disable=deprecated-module,useless-suppression
     LooseVersion,
 )
+from sys import stdout  # nosec
 from types import TracebackType
 from typing import (
     Any,
@@ -83,6 +84,36 @@ _REPO_CONFIG: Repo = {}
 
 def get_repo_config() -> Repo:
     """Get the repository configuration."""
+
+    global _REPO_CONFIG
+
+    if not _REPO_CONFIG and os.path.isfile(".repo.yaml"):
+        with open(".repo.yaml", encoding="utf-8") as file:
+            _REPO_CONFIG = cast(Repo, yaml.safe_load(file))
+
+            if "name" not in _REPO_CONFIG:
+                remotes = (
+                    run(["git", "remote", "--verbose"], stdout=subprocess.PIPE).stdout.strip().split("\n")
+                )
+                for remote in remotes:
+                    if remote.startswith("upstream "):
+                        _REPO_CONFIG["name"] = remote.split()[1].split(":")[1].replace(".git", "")
+                        break
+
+                if "name" not in _REPO_CONFIG:
+                    for remote in remotes:
+                        if remote.startswith("origin "):
+                            _REPO_CONFIG["name"] = remote.split()[1].split(":")[1].replace(".git", "")
+                            break
+
+                if "name" not in _REPO_CONFIG:
+                    for remote in remotes:
+                        _REPO_CONFIG["name"] = remote.split()[1].split(":")[1].replace(".git", "")
+                        break
+
+            if "dir" not in _REPO_CONFIG:
+                _REPO_CONFIG["dir"] = os.getcwd()
+
     return _REPO_CONFIG
 
 
@@ -513,7 +544,7 @@ def get_stabilization_versions(repo: Repo) -> List[str]:
     """
     Update the list of stabilization branches in the repo.
 
-    From the     `SECURITY.md` file.
+    From the `SECURITY.md` file.
     """
     import c2cciutils.security  # pylint: disable=import-outside-toplevel
 
