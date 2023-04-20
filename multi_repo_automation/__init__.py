@@ -1,44 +1,41 @@
 """Tools to automated changes on multiple repositories."""
 
 import argparse
-import json
 import os
 import re
 import shutil
-import subprocess
+import subprocess  # nosec
 import tempfile
 import traceback
 from distutils.version import (  # pylint: disable=deprecated-module,useless-suppression
     LooseVersion,
 )
-from sys import stdout  # nosec
 from types import TracebackType
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    List,
-    Literal,
-    Optional,
-    Set,
-    Tuple,
-    Type,
-    TypedDict,
-    cast,
-)
+from typing import Any, Callable, Dict, List, Literal, Optional, Set, Tuple, Type, cast
 
 import requests
 import yaml
 from identify import identify
 
-from multi_repo_automation.editor import Edit  # noqa
-from multi_repo_automation.editor import EditConfig  # noqa
-from multi_repo_automation.editor import EditPreCommitConfig  # noqa
-from multi_repo_automation.editor import EditRenovateConfig  # noqa
-from multi_repo_automation.editor import EditTOML  # noqa
-from multi_repo_automation.editor import EditYAML  # noqa
-from multi_repo_automation.editor import add_pre_commit_hook  # noqa
-from multi_repo_automation.tools import run
+import multi_repo_automation.tools
+from multi_repo_automation.editor import (  # noqa
+    Edit,
+    EditConfig,
+    EditPreCommitConfig,
+    EditRenovateConfig,
+    EditTOML,
+    EditYAML,
+)
+from multi_repo_automation.tools import (  # noqa
+    Repo,
+    edit,
+    get_browser,
+    get_editor,
+    get_repo_config,
+    gh,
+    gh_json,
+    run,
+)
 
 CONFIG_FILENAME = "multi-repo-automation.yaml"
 
@@ -50,72 +47,6 @@ else:
     CONFIG_FOLDER = os.path.expanduser("~/.config")
 
 CONFIG_PATH = os.path.join(CONFIG_FOLDER, CONFIG_FILENAME)
-
-
-class Repo(TypedDict, total=False):
-    """The repository description."""
-
-    dir: str
-    name: str
-    master_branch: str
-    stabilization_branches: List[str]
-    stabilization_version_to_branch: Dict[str, str]
-    folders_to_clean: List[str]
-    clean: bool
-
-
-_BROWSER = "xdg-open"
-
-
-def get_browser() -> str:
-    """Get the global configuration."""
-    return _BROWSER
-
-
-_EDITOR = "xdg-open"
-
-
-def get_editor() -> str:
-    """Get the global configuration."""
-    return _EDITOR
-
-
-_REPO_CONFIG: Repo = {}
-
-
-def get_repo_config() -> Repo:
-    """Get the repository configuration."""
-
-    global _REPO_CONFIG
-
-    if not _REPO_CONFIG and os.path.isfile(".repo.yaml"):
-        with open(".repo.yaml", encoding="utf-8") as file:
-            _REPO_CONFIG = cast(Repo, yaml.safe_load(file))
-
-            if "name" not in _REPO_CONFIG:
-                remotes = (
-                    run(["git", "remote", "--verbose"], stdout=subprocess.PIPE).stdout.strip().split("\n")
-                )
-                for remote in remotes:
-                    if remote.startswith("upstream "):
-                        _REPO_CONFIG["name"] = remote.split()[1].split(":")[1].replace(".git", "")
-                        break
-
-                if "name" not in _REPO_CONFIG:
-                    for remote in remotes:
-                        if remote.startswith("origin "):
-                            _REPO_CONFIG["name"] = remote.split()[1].split(":")[1].replace(".git", "")
-                            break
-
-                if "name" not in _REPO_CONFIG:
-                    for remote in remotes:
-                        _REPO_CONFIG["name"] = remote.split()[1].split(":")[1].replace(".git", "")
-                        break
-
-            if "dir" not in _REPO_CONFIG:
-                _REPO_CONFIG["dir"] = os.getcwd()
-
-    return _REPO_CONFIG
 
 
 _ARGUMENTS: Optional[argparse.Namespace] = None
@@ -417,7 +348,7 @@ class Branch:
                 ],
             )
         else:
-            run(["git", "pull", "--rebase"])
+            run(["git", "pull", self.repo.get("remote", "origin"), "--rebase"])
 
     def __exit__(
         self,
@@ -525,20 +456,6 @@ def replace(filename: str, search_text: str, replace_text: str) -> None:
     content = re.sub(search_text, replace_text, content)
     with open(filename, "w", encoding="utf-8") as file_:
         file_.write(content)
-
-
-def edit(files: List[str]) -> None:
-    """Edit the files in an editor."""
-    for file in files:
-        print(os.path.abspath(file))
-        with open(file, "a", encoding="utf-8"):
-            pass
-        run([get_editor(), file])
-        print("Press enter to continue")
-        input()
-        # Remove the file if he is empty
-        if os.path.exists(file) and os.stat(file).st_size == 0:
-            os.remove(file)
 
 
 def get_stabilization_versions(repo: Repo) -> List[str]:
@@ -661,7 +578,6 @@ class App:
 
     def run(self) -> None:
         """Run the conversion."""
-        global _REPO_CONFIG  # pylint: disable=global-statement
 
         if self.local:
             self.action()
@@ -669,7 +585,7 @@ class App:
         url_to_open = []
         try:
             for repo in self.repos:
-                _REPO_CONFIG = repo
+                multi_repo_automation.tools.set_repo_config(repo)
                 if self.repository_prefix is None or repo["name"].startswith(self.repository_prefix):
                     try:
                         print(f"=== {repo['name']} ===")
@@ -801,11 +717,8 @@ def main(
         def action() -> None:
             run([args.command])
 
-    global _BROWSER  # pylint: disable=global-statement
-    _BROWSER = args.browser
-
-    global _EDITOR  # pylint: disable=global-statement
-    _EDITOR = args.editor
+    multi_repo_automation.tools.set_browser(args.browser)
+    multi_repo_automation.tools.set_editor(args.editor)
 
     app = App(repos, action, browser=args.browser)
     app.one = args.one
@@ -846,17 +759,3 @@ def update_stabilization_branches_main() -> None:
         assert isinstance(repos, EditYAML)
         for repo in repos:
             update_stabilization_branches(cast(Repo, repo))
-
-
-def gh(command: str, *args: str) -> str:  # pylint: disable=invalid-name
-    """Run a GitHub command."""
-
-    return run(
-        ["gh", command, f"--repo={get_repo_config()['name']}", *args], stdout=subprocess.PIPE
-    ).stdout.strip()
-
-
-def gh_json(command: str, fields: List[str], *args: str) -> List[Dict[str, str]]:
-    """Get the JSON from a GitHub command."""
-
-    return json.loads(gh(command, f"--json={','.join(fields)}", *args))

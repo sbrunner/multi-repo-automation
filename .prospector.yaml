@@ -10,6 +10,7 @@ pylint:
     - too-many-instance-attributes
     - too-many-branches
     - too-many-lines
+    - too-many-nested-blocks
     - trailing-whitespace
 
 pycodestyle:
