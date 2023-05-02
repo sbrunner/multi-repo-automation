@@ -38,7 +38,7 @@ repository = "https://github.com/sbrunner/multi-repo-automation"
 [tool.poetry.dependencies]
 python = ">=3.8,<4.0"
 PyYAML = "6.0"
-requests = "2.28.2"
+requests = "2.29.0"
 "ruamel.yaml" = "0.17.21"
 identify = "2.5.23"
 c2cciutils = { version = "1.5.2", optional = true }
@@ -51,7 +51,7 @@ update_stabilization_branches = ["c2cciutils"]
 [tool.poetry.group.dev.dependencies]
 prospector = { extras = ["with_bandit", "with_mypy", "with_pyroma"], version = "1.9.0" }
 types-PyYAML = "6.0.12.9"
-types-requests = "2.28.11.17"
+types-requests = "2.29.0.0"
 
 [tool.poetry.scripts]
 mra-update-stabilization-branches = 'multi_repo_automation:update_stabilization_branches_main'
