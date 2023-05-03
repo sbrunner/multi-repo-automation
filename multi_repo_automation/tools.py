@@ -104,25 +104,25 @@ def get_repo_config() -> Repo:
         if "remote" not in repo:
             remotes = run(["git", "remote", "--verbose"], stdout=subprocess.PIPE).stdout.strip().split("\n")
             for remote in remotes:
-                if remote.startswith("upstream "):
+                if remote.startswith("upstream\t"):
                     repo["remote"] = "upstream"
                     break
 
-            if "name" not in repo:
+            if "remote" not in repo:
                 for remote in remotes:
-                    if remote.startswith("origin "):
+                    if remote.startswith("origin\t"):
                         repo["remote"] = "origin"
                         break
 
-            if "name" not in repo:
+            if "remote" not in repo:
                 for remote in remotes:
-                    repo["remote"] = remote.split()[0]
+                    repo["remote"] = remote.split("\t")[0]
                     break
 
         if "name" not in repo:
             remotes = run(["git", "remote", "--verbose"], stdout=subprocess.PIPE).stdout.strip().split("\n")
             for remote in remotes:
-                if remote.startswith(f"{repo['remote']} "):
+                if remote.startswith(f"{repo['remote']}\t"):
                     repo["name"] = remote.split()[1].split(":")[1].replace(".git", "")
                     break
 
