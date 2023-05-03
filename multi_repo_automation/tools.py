@@ -81,7 +81,7 @@ class Repo(TypedDict, total=False):
     clean: bool
 
 
-_REPO_CONFIG: Union[Repo, Dict[str, None]] = {}  # pylint: disable=invalid-name
+_REPO_CONFIG: Union[Repo, Dict[str, None]] = {}
 
 
 def set_repo_config(repo_config: Repo) -> None:
