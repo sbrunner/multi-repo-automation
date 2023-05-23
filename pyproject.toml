@@ -38,7 +38,7 @@ repository = "https://github.com/sbrunner/multi-repo-automation"
 [tool.poetry.dependencies]
 python = ">=3.8,<4.0"
 PyYAML = "6.0"
-requests = "2.29.0"
+requests = "2.31.0"
 "ruamel.yaml" = "0.17.21"
 identify = "2.5.23"
 c2cciutils = { version = "1.5.2", optional = true }
