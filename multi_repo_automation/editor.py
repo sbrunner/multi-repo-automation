@@ -401,7 +401,13 @@ class _RepoHook(TypedDict):
 class EditPreCommitConfig(EditYAML):
     """Edit the pre-commit config file."""
 
-    def __init__(self, filename: str = ".pre-commit-config.yaml", fix_files: bool = True, **kwargs: Any):
+    def __init__(
+        self,
+        filename: str = ".pre-commit-config.yaml",
+        fix_files: bool = True,
+        save_on_fixed_files: bool = False,
+        **kwargs: Any,
+    ):
         super().__init__(filename, **kwargs)
 
         self.repos_hooks: Dict[str, _RepoHook] = {}
@@ -417,6 +423,9 @@ class EditPreCommitConfig(EditYAML):
 
         if fix_files:
             self.fix_files()
+
+        if not save_on_fixed_files:
+            self.original_data = self.dump(self.data)
 
     def add_repo(self, repo: str, rev: Optional[str] = None) -> None:
         """Add a repo to the pre-commit config."""
