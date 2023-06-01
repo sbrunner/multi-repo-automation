@@ -49,9 +49,9 @@ configupdater = "3.1.1"
 update_stabilization_branches = ["c2cciutils"]
 
 [tool.poetry.group.dev.dependencies]
-prospector = { extras = ["with_bandit", "with_mypy", "with_pyroma"], version = "1.9.0" }
+prospector = { extras = ["with_bandit", "with_mypy", "with_pyroma"], version = "1.10.2" }
 types-PyYAML = "6.0.12.9"
-types-requests = "2.29.0.0"
+types-requests = "2.31.0.1"
 
 [tool.poetry.scripts]
 mra-update-stabilization-branches = 'multi_repo_automation:update_stabilization_branches_main'
