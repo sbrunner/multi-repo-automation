@@ -265,8 +265,8 @@ class EditYAML(_EditDict):
 
         self.yaml = ruamel.yaml.YAML()
         self.yaml.default_flow_style = default_flow_style
-        self.yaml.width = width  # type: ignore
-        self.yaml.preserve_quotes = preserve_quotes  # type: ignore
+        self.yaml.width = width
+        self.yaml.preserve_quotes = preserve_quotes
         self.yaml.indent(mapping=mapping, sequence=sequence, offset=offset)
 
         super().__init__(filename, **kwargs)
