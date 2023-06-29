@@ -287,7 +287,12 @@ class EditYAML(_EditDict):
             pre_commit_config.add_repo("https://github.com/pre-commit/mirrors-prettier", "v2.7.1")
             pre_commit_config.add_hook(
                 "https://github.com/pre-commit/mirrors-prettier",
-                {"id": "prettier", "additional_dependencies": ["prettier@2.8.4"]},
+                {
+                    "id": "prettier",
+                    "additional_dependencies": pre_commit_config.commented_additional_dependencies(
+                        ["prettier@2.8.4"], "npm"
+                    ),
+                },
             )
 
 
@@ -466,6 +471,25 @@ class EditPreCommitConfig(EditYAML):
         for index, _ in enumerate(dependencies):
             result.yaml_add_eol_comment(type_, index)
         return result
+
+    def add_commented_additional_dependencies(
+        self, hook: PreCommitHook, dependencies: List[str], type_: str
+    ) -> None:
+        """
+        Add comments to the additional dependencies.
+
+        The result will be like this:
+        ```yaml
+        - poetry==1.4.1 # pypi
+        ```
+        The `# pypi` is used by Renovate to know the type of the package.
+        """
+        if "additional_dependencies" not in hook:
+            hook["additional_dependencies"] = ruamel.yaml.comments.CommentedSeq([])
+        for dependency in dependencies:
+            hook["additional_dependencies"].append(dependency)
+        for index in range(len(hook["additional_dependencies"])):
+            hook["additional_dependencies"].yaml_add_eol_comment(type_, index)  # type: ignore[attr-defined]
 
     def create_files_regex(self, files: List[str], add_start_end: bool = True) -> str:
         """Create a regex to match the files."""
