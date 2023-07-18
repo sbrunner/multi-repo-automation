@@ -432,6 +432,9 @@ class EditPreCommitConfig(EditYAML):
         if not save_on_fixed_files:
             self.original_data = self.dump(self.data)
 
+    def add_pre_commit_hook(self) -> None:
+        pass
+
     def add_repo(self, repo: str, rev: Optional[str] = None) -> None:
         """Add a repo to the pre-commit config."""
 
