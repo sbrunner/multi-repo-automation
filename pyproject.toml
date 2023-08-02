@@ -42,7 +42,7 @@ requests = "2.31.0"
 "ruamel.yaml" = "0.17.32"
 identify = "2.5.26"
 c2cciutils = { version = "1.5.8", optional = true }
-tomlkit = "0.11.8"
+tomlkit = "0.12.1"
 configupdater = "3.1.1"
 
 [tool.poetry.extras]
