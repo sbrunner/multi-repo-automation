@@ -511,7 +511,7 @@ class EditPreCommitConfig(EditYAML):
 
     def skip_ci(self, hook_id: str) -> None:
         """Add hook in the list that will be ignore by pre-commit.ci."""
-        if hook_id not in self["ci"].setdefault("skip", []):
+        if hook_id not in self.setdefault("ci", {}).setdefault("skip", []):
             if hasattr(self["ci"]["skip"], "ca"):
                 yaml_hooks = ruamel.yaml.comments.CommentedSeq([*self["ci"]["skip"], hook_id])
                 yaml_hooks._yaml_comment = self["ci"][  # type: ignore # pylint: disable=protected-access
