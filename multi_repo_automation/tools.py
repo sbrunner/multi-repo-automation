@@ -5,7 +5,7 @@ import os
 import shlex
 import subprocess  # nosec
 import sys
-from typing import Any, Dict, List, TypedDict, Union, cast
+from typing import Any, TypedDict, Union, cast
 
 import yaml
 from typing_extensions import Required
@@ -15,10 +15,10 @@ class HookDefinition(TypedDict, total=False):
     """Hook standard definition."""
 
     id: str
-    args: List[str]
+    args: list[str]
     files: str
     language_version: str
-    additional_dependencies: List[str]
+    additional_dependencies: list[str]
 
 
 class RepoDefinition(TypedDict):
@@ -26,14 +26,14 @@ class RepoDefinition(TypedDict):
 
     repo: str
     rev: str
-    hooks: List[HookDefinition]
+    hooks: list[HookDefinition]
 
 
 class RepoRepresentation(TypedDict):
     """Repo representation used internally."""
 
     repo: RepoDefinition
-    hooks: Dict[str, HookDefinition]
+    hooks: dict[str, HookDefinition]
 
 
 _BROWSER = "xdg-open"
@@ -75,13 +75,13 @@ class Repo(TypedDict, total=False):
     name: Required[str]
     master_branch: str
     remote: str
-    stabilization_branches: List[str]
-    stabilization_version_to_branch: Dict[str, str]
-    folders_to_clean: List[str]
+    stabilization_branches: list[str]
+    stabilization_version_to_branch: dict[str, str]
+    folders_to_clean: list[str]
     clean: bool
 
 
-_REPO_CONFIG: Union[Repo, Dict[str, None]] = {}
+_REPO_CONFIG: Union[Repo, dict[str, None]] = {}
 
 
 def set_repo_config(repo_config: Repo) -> None:
@@ -133,7 +133,7 @@ def get_repo_config() -> Repo:
 
 
 def run(
-    cmd: List[str], exit_on_error: bool = True, auto_fix_owner: bool = False, **kwargs: Any
+    cmd: list[str], exit_on_error: bool = True, auto_fix_owner: bool = False, **kwargs: Any
 ) -> subprocess.CompletedProcess[str]:
     """Run a command."""
     print(f"$ {shlex.join(cmd)}")
@@ -153,7 +153,7 @@ def run(
     return process
 
 
-def edit(files: List[str]) -> None:
+def edit(files: list[str]) -> None:
     """Edit the files in an editor."""
     for file in files:
         print(os.path.abspath(file))
@@ -175,7 +175,7 @@ def gh(command: str, *args: str) -> str:  # pylint: disable=invalid-name
     ).stdout.strip()
 
 
-def gh_json(command: str, fields: List[str], *args: str) -> List[Dict[str, str]]:
+def gh_json(command: str, fields: list[str], *args: str) -> list[dict[str, str]]:
     """Get the JSON from a GitHub command."""
 
-    return cast(List[Dict[str, str]], json.loads(gh(command, f"--json={','.join(fields)}", *args)))
+    return cast(list[dict[str, str]], json.loads(gh(command, f"--json={','.join(fields)}", *args)))

@@ -1,12 +1,12 @@
 [tool.black]
 line-length = 110
-target-version = ["py38"]
+target-version = ["py39"]
 
 [tool.isort]
 profile = "black"
 
 [tool.mypy]
-python_version = 3.8
+python_version = 3.9
 ignore_missing_imports = true
 warn_redundant_casts = true
 warn_unused_ignores = true
@@ -27,16 +27,16 @@ classifiers = [
     "Operating System :: OS Independent",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
     "Typing :: Typed",
 ]
 authors = ["Stéphane Brunner <stephane.brunner@gmail.com>"]
 repository = "https://github.com/sbrunner/multi-repo-automation"
 
 [tool.poetry.dependencies]
-python = ">=3.8,<4.0"
+python = ">=3.9,<4.0"
 PyYAML = "6.0.1"
 requests = "2.31.0"
 "ruamel.yaml" = "0.17.32"
@@ -44,6 +44,7 @@ identify = "2.5.26"
 c2cciutils = { version = "1.5.8", optional = true }
 tomlkit = "0.12.1"
 configupdater = "3.1.1"
+typing_extensions = "4.7.1"
 
 [tool.poetry.extras]
 update_stabilization_branches = ["c2cciutils"]
@@ -56,6 +57,7 @@ prospector-profile-duplicated = "0.1.0"
 
 [tool.poetry.scripts]
 mra-update-stabilization-branches = 'multi_repo_automation:update_stabilization_branches_main'
+mra-yaml = "multi_repo_automation.commented_yaml:main"
 
 [build-system]
 requires = ["poetry-core>=1.0.0", "poetry-dynamic-versioning", "poetry-plugin-tweak-dependencies-version"]
