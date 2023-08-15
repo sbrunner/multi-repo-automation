@@ -53,9 +53,9 @@ jobs:
       fail-fast: false
       matrix:
         python-version:
-          - '3.8'
           - '3.9'
           - '3.10'
+          - '3.11'
 
     steps:
       - uses: actions/checkout@v3
@@ -78,6 +78,9 @@ jobs:
 
       - run: poetry run prospector --output=pylint --die-on-tool-error
         if: matrix.python-version != '3.8'
+
+      - run: pip install -e .
+      - run: mra-yaml --test -
 
   publish:
     name: Publish

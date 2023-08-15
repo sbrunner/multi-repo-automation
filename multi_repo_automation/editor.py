@@ -8,23 +8,9 @@ import subprocess  # nosec
 import sys
 import traceback
 from abc import abstractmethod
+from collections.abc import ItemsView, Iterator, KeysView, ValuesView
 from types import TracebackType
-from typing import (
-    Any,
-    Dict,
-    ItemsView,
-    Iterator,
-    KeysView,
-    List,
-    Literal,
-    Optional,
-    Tuple,
-    Type,
-    TypedDict,
-    Union,
-    ValuesView,
-    cast,
-)
+from typing import Any, Literal, Optional, TypedDict, Union, cast
 
 import ruamel.yaml.comments
 import ruamel.yaml.scalarstring
@@ -73,7 +59,7 @@ class _Edit:
 
     def __exit__(
         self,
-        exc_type: Optional[Type[BaseException]],
+        exc_type: Optional[type[BaseException]],
         exc_val: Optional[BaseException],
         exc_tb: Optional[TracebackType],
     ) -> Literal[False]:
@@ -162,21 +148,21 @@ class Edit(_Edit):
 
 
 class _EditDict(_Edit):
-    data: Dict[str, Any]
+    data: dict[str, Any]
 
     @abstractmethod
-    def load(self, content: io.TextIOWrapper) -> Dict[str, Any]:
+    def load(self, content: io.TextIOWrapper) -> dict[str, Any]:
         """Load the content."""
         del content
         raise NotImplementedError()
 
     @abstractmethod
-    def dump(self, data: Dict[str, Any]) -> str:
+    def dump(self, data: dict[str, Any]) -> str:
         """Load the content."""
         del data
         raise NotImplementedError()
 
-    def get_empty(self) -> Dict[str, Any]:
+    def get_empty(self) -> dict[str, Any]:
         """Get the empty data."""
         return {}
 
@@ -231,11 +217,11 @@ class _EditDict(_Edit):
         """Pop the key."""
         return self.data.pop(key, default)
 
-    def popitem(self) -> Tuple[str, Any]:
+    def popitem(self) -> tuple[str, Any]:
         """Pop an item."""
         return self.data.popitem()
 
-    def update(self, other: Dict[str, Any]) -> None:
+    def update(self, other: dict[str, Any]) -> None:
         """Update the data."""
         self.data.update(other)
 
@@ -271,11 +257,11 @@ class EditYAML(_EditDict):
 
         super().__init__(filename, **kwargs)
 
-    def load(self, content: io.TextIOWrapper) -> Dict[str, Any]:
+    def load(self, content: io.TextIOWrapper) -> dict[str, Any]:
         """Load the file."""
-        return cast(Dict[str, Any], self.yaml.load(content))
+        return cast(dict[str, Any], self.yaml.load(content))
 
-    def dump(self, data: Dict[str, Any]) -> str:
+    def dump(self, data: dict[str, Any]) -> str:
         """Load the file."""
         out = io.StringIO()
         self.yaml.dump(self.data, out)
@@ -306,11 +292,11 @@ class EditTOML(_EditDict):
     ```
     """
 
-    def load(self, content: io.TextIOWrapper) -> Dict[str, Any]:
+    def load(self, content: io.TextIOWrapper) -> dict[str, Any]:
         """Load the file."""
         return tomlkit.parse(content.read())
 
-    def dump(self, data: Dict[str, Any]) -> str:
+    def dump(self, data: dict[str, Any]) -> str:
         """Load the file."""
         return tomlkit.dumps(data)
 
@@ -377,12 +363,12 @@ class PreCommitHook(TypedDict, total=False):
     language_version: str
     files: str
     exclude: str
-    types: List[str]
-    types_or: List[str]
-    exclude_types: List[str]
-    args: List[str]
-    stages: List[str]
-    additional_dependencies: List[str]
+    types: list[str]
+    types_or: list[str]
+    exclude_types: list[str]
+    args: list[str]
+    stages: list[str]
+    additional_dependencies: list[str]
     always_run: bool
     verbose: bool
     log_file: str
@@ -393,14 +379,14 @@ class _PreCommitRepo(TypedDict):
 
     repo: str
     rev: str
-    hooks: List[PreCommitHook]
+    hooks: list[PreCommitHook]
 
 
 class _RepoHook(TypedDict):
     """Repo hook."""
 
     repo: _PreCommitRepo
-    hooks: Dict[str, PreCommitHook]
+    hooks: dict[str, PreCommitHook]
 
 
 class EditPreCommitConfig(EditYAML):
@@ -415,7 +401,7 @@ class EditPreCommitConfig(EditYAML):
     ):
         super().__init__(filename, **kwargs)
 
-        self.repos_hooks: Dict[str, _RepoHook] = {}
+        self.repos_hooks: dict[str, _RepoHook] = {}
         for repo in self["repos"]:
             self.repos_hooks.setdefault(
                 repo["repo"], {"repo": repo, "hooks": {hook["id"]: hook for hook in repo["hooks"]}}
@@ -460,7 +446,7 @@ class EditPreCommitConfig(EditYAML):
             if ci_skip:
                 self.skip_ci(hook["id"])
 
-    def commented_additional_dependencies(self, dependencies: List[str], type_: str) -> List[str]:
+    def commented_additional_dependencies(self, dependencies: list[str], type_: str) -> list[str]:
         """
         Add comments to the additional dependencies.
 
@@ -476,7 +462,7 @@ class EditPreCommitConfig(EditYAML):
         return result
 
     def add_commented_additional_dependencies(
-        self, hook: PreCommitHook, dependencies: List[str], type_: str
+        self, hook: PreCommitHook, dependencies: list[str], type_: str
     ) -> None:
         """
         Add comments to the additional dependencies.
@@ -494,7 +480,7 @@ class EditPreCommitConfig(EditYAML):
         for index in range(len(hook["additional_dependencies"])):
             hook["additional_dependencies"].yaml_add_eol_comment(type_, index)  # type: ignore[attr-defined]
 
-    def create_files_regex(self, files: List[str], add_start_end: bool = True) -> str:
+    def create_files_regex(self, files: list[str], add_start_end: bool = True) -> str:
         """Create a regex to match the files."""
         if len(files) == 1:
             return f"^{files[0]}$" if add_start_end else files[0]
@@ -584,7 +570,7 @@ class EditRenovateConfig(Edit):
             index = self.data.rindex("}")
             self.data = self.data[:index] + data + self.data[index:]
 
-    def _clean_data(self, data: Union[str, List[Any], Dict[str, Any]]) -> str:
+    def _clean_data(self, data: Union[str, list[Any], dict[str, Any]]) -> str:
         if isinstance(data, dict):
             data = json.dumps(data, indent=2)
         if isinstance(data, list):
@@ -602,7 +588,7 @@ class EditRenovateConfig(Edit):
         data = data.rstrip()
         return f" {{ {data} }},\n"
 
-    def add_regex_manager(self, data: Union[str, List[Any], Dict[str, Any]], test: str) -> None:
+    def add_regex_manager(self, data: Union[str, list[Any], dict[str, Any]], test: str) -> None:
         """Add a regex manager to the Renovate config."""
 
         if test in self.data:
@@ -625,7 +611,7 @@ class EditRenovateConfig(Edit):
             index = self.data.rindex("}")
             self.data = self.data[:index] + f" regexManagers: [{data}],\n" + self.data[index:]
 
-    def add_package_rule(self, data: Union[str, List[Any], Dict[str, Any]], test: str) -> None:
+    def add_package_rule(self, data: Union[str, list[Any], dict[str, Any]], test: str) -> None:
         """Add a package rule to the Renovate config."""
 
         if test in self.data:

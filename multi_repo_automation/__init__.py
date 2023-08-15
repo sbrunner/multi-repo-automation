@@ -11,7 +11,7 @@ from distutils.version import (  # pylint: disable=deprecated-module,useless-sup
     LooseVersion,
 )
 from types import TracebackType
-from typing import Any, Callable, Dict, List, Literal, Optional, Set, Tuple, Type, cast
+from typing import Any, Callable, Literal, Optional, cast
 
 import requests
 import yaml
@@ -59,7 +59,7 @@ def get_arguments() -> argparse.Namespace:
     return _ARGUMENTS
 
 
-def all_filenames(repo: Optional[Repo] = None) -> List[str]:
+def all_filenames(repo: Optional[Repo] = None) -> list[str]:
     """Get all the filenames of the repository."""
     cmd = ["git", "ls-files"]
     result = (
@@ -70,15 +70,15 @@ def all_filenames(repo: Optional[Repo] = None) -> List[str]:
     return result.stdout.strip().split("\n")
 
 
-def all_identify(repo: Optional[Repo] = None) -> Set[str]:
+def all_identify(repo: Optional[Repo] = None) -> set[str]:
     """Get all the types of the repository."""
-    result: Set[str] = set()
+    result: set[str] = set()
     for filename in all_filenames(repo):
         result |= identify.tags_from_path(filename)
     return result
 
 
-def all_filenames_identify(type_: str, repo: Optional[Repo] = None) -> List[str]:
+def all_filenames_identify(type_: str, repo: Optional[Repo] = None) -> list[str]:
     """Check if the repository contains a file of the given type."""
     result = []
     for filename in all_filenames(repo):
@@ -105,7 +105,7 @@ class Cwd:
 
     def __exit__(
         self,
-        exc_type: Optional[Type[BaseException]],
+        exc_type: Optional[type[BaseException]],
         exc_val: Optional[BaseException],
         exc_tb: Optional[TracebackType],
     ) -> Literal[False]:
@@ -209,7 +209,7 @@ class CreateBranch:
 
     def __exit__(
         self,
-        exc_type: Optional[Type[BaseException]],
+        exc_type: Optional[type[BaseException]],
         exc_val: Optional[BaseException],
         exc_tb: Optional[TracebackType],
     ) -> Literal[False]:
@@ -247,7 +247,7 @@ def create_pull_request(
     body: Optional[str] = None,
     force: bool = True,
     base_branch: Optional[str] = None,
-) -> Tuple[bool, str]:
+) -> tuple[bool, str]:
     """Create a pull request."""
     run(["git", "status", "--short"])
     if not run(["git", "status", "--short"], stdout=subprocess.PIPE).stdout.strip():
@@ -352,7 +352,7 @@ class Branch:
 
     def __exit__(
         self,
-        exc_type: Optional[Type[BaseException]],
+        exc_type: Optional[type[BaseException]],
         exc_val: Optional[BaseException],
         exc_tb: Optional[TracebackType],
     ) -> Literal[False]:
@@ -397,7 +397,7 @@ class Commit:
 
     def __exit__(
         self,
-        exc_type: Optional[Type[BaseException]],
+        exc_type: Optional[type[BaseException]],
         exc_val: Optional[BaseException],
         exc_tb: Optional[TracebackType],
     ) -> Literal[False]:
@@ -433,7 +433,7 @@ def copy_file(from_: str, to_: str, only_if_already_exists: bool = True) -> None
         shutil.copyfile(from_, to_)
 
 
-def git_grep(text: str, args: Optional[List[str]] = None) -> Set[str]:
+def git_grep(text: str, args: Optional[list[str]] = None) -> set[str]:
     """Grep the code against the text."""
     proc = run(
         ["git", "grep", *(args or []), "--", text],
@@ -458,7 +458,7 @@ def replace(filename: str, search_text: str, replace_text: str) -> None:
         file_.write(content)
 
 
-def get_stabilization_versions(repo: Repo) -> List[str]:
+def get_stabilization_versions(repo: Repo) -> list[str]:
     """
     Update the list of stabilization branches in the repo.
 
@@ -489,7 +489,7 @@ def get_stabilization_versions(repo: Repo) -> List[str]:
     return stabilization_versions
 
 
-def get_stabilization_branches(repo: Repo) -> List[str]:
+def get_stabilization_branches(repo: Repo) -> list[str]:
     """
     Update the list of stabilization branches in the repo.
 
@@ -497,7 +497,7 @@ def get_stabilization_branches(repo: Repo) -> List[str]:
     """
 
     stabilization_versions = get_stabilization_versions(repo)
-    stabilization_version_to_branch: Dict[str, str] = repo.get("stabilization_version_to_branch", {})
+    stabilization_version_to_branch: dict[str, str] = repo.get("stabilization_version_to_branch", {})
     return [stabilization_version_to_branch.get(v, v) for v in stabilization_versions]
 
 
@@ -513,8 +513,8 @@ def update_stabilization_branches(repo: Repo) -> None:
 
 
 def do_on_base_branches(
-    repo: Repo, branch_prefix: str, func: Callable[[Repo], Optional[List[str]]]
-) -> List[str]:
+    repo: Repo, branch_prefix: str, func: Callable[[Repo], Optional[list[str]]]
+) -> list[str]:
     """Do the func action on all the base branches of the repo."""
     result = set()
     branches = [*(repo.get("stabilization_branches") or []), repo.get("master_branch", "master")]
@@ -551,7 +551,7 @@ class App:
     one = False
     repository_prefix: Optional[str] = None
 
-    def __init__(self, repos: List[Repo], action: Callable[[], None], browser: str = "firefox") -> None:
+    def __init__(self, repos: list[Repo], action: Callable[[], None], browser: str = "firefox") -> None:
         self.repos = repos
         self.action = action
         self.browser = browser
@@ -591,7 +591,7 @@ class App:
                         print(f"=== {repo['name']} ===")
                         with Cwd(repo):
                             if self.do_pr:
-                                base_branches: Set[str] = {repo.get("master_branch", "master")}
+                                base_branches: set[str] = {repo.get("master_branch", "master")}
                                 if self.do_pr_on_stabilization_branches:
                                     base_branches.update(repo.get("stabilization_branches") or [])
 
@@ -629,7 +629,7 @@ class App:
 def main(
     action: Optional[Callable[[], None]] = None,
     description: str = "Apply an action on all the pre-configured repositories.",
-    config: Optional[Dict[str, str]] = None,
+    config: Optional[dict[str, str]] = None,
     add_arguments: Optional[Callable[[argparse.ArgumentParser], None]] = None,
 ) -> None:
     """Apply an action on all the repos."""
