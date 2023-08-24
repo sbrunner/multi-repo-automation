@@ -94,11 +94,19 @@ class _Edit:
                     with open(self.filename, "w", encoding="utf-8") as file_:
                         file_.write(new_data)
                     if os.path.exists(".pre-commit-config.yaml") and self.run_pre_commit:
-                        proc = run(["pre-commit", "run", "--color=never", "--files", self.filename], False)
-                        if proc.returncode != 0 and os.environ.get("DEBUG", "false").lower() in ("true", "1"):
-                            proc = run(["pre-commit", "run", "--files", self.filename], False)
-                            if proc.returncode != 0:
-                                edit([self.filename])
+                        try:
+                            proc = run(
+                                ["pre-commit", "run", "--color=never", "--files", self.filename], False
+                            )
+                            if proc.returncode != 0 and os.environ.get("DEBUG", "false").lower() in (
+                                "true",
+                                "1",
+                            ):
+                                proc = run(["pre-commit", "run", "--files", self.filename], False)
+                                if proc.returncode != 0:
+                                    edit([self.filename])
+                        except subprocess.TimeoutExpired as exc:
+                            print(exc)
         return False
 
     @abstractmethod

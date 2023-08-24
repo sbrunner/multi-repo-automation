@@ -270,9 +270,22 @@ def create_pull_request(
             if body is not None:
                 message_file.write(f"\n{body}\n".encode())
             message_file.flush()
-            if run(["git", "commit", f"--file={message_file.name}"], False).returncode != 0:
-                run(["git", "add", "--all"])
-                run(["git", "commit", "--no-verify", f"--file={message_file.name}"])
+            try:
+                if run(["git", "commit", f"--file={message_file.name}"], False).returncode != 0:
+                    run(["git", "add", "--all"])
+                    run(["git", "commit", "--no-verify", f"--file={message_file.name}"])
+            except subprocess.TimeoutExpired as exc:
+                print(exc)
+                if (
+                    run(
+                        ["git", "commit", f"--file={message_file.name}"],
+                        False,
+                        env={"SKIP": "poetry-lock", **os.environ},
+                    ).returncode
+                    != 0
+                ):
+                    run(["git", "add", "--all"])
+                    run(["git", "commit", "--no-verify", f"--file={message_file.name}"])
 
     if title is not None:
         cmd.extend(["--title", title])
