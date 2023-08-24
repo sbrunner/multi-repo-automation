@@ -140,10 +140,13 @@ def run(
     sys.stdout.flush()
     if "stdout" in kwargs and kwargs["stdout"] == subprocess.PIPE and "encoding" not in kwargs:
         kwargs["encoding"] = "utf-8"
+    timeout = os.environ.get("MRA_TIMEOUT")
+    if timeout:
+        kwargs.setdefault("timeout", int(timeout))
     process = subprocess.run(cmd, **kwargs)  # pylint: disable=subprocess-run-check # nosec
 
     if auto_fix_owner and process.returncode != 0:
-        run(["sudo", "chown", "-R", f"{os.getuid()}:{os.getgid()}", "."])
+        run(["sudo", "chown", "-R", f"{os.getuid()}:{os.getgid()}", "."], timeout=None)
         process = subprocess.run(cmd, **kwargs)  # pylint: disable=subprocess-run-check # nosec
 
     if process.returncode != 0:
