@@ -55,7 +55,7 @@ repos:
     #     - id: prospector
     #       args: [--tool=pydocstyle, --die-on-tool-error]
   - repo: https://github.com/PyCQA/autoflake
-    rev: v2.2.0
+    rev: v2.2.1
     hooks:
       - id: autoflake
   - repo: https://github.com/codespell-project/codespell
@@ -72,20 +72,20 @@ repos:
         args:
           - --py39-plus
   - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: v3.0.0
+    rev: v3.0.3
     hooks:
       - id: prettier
         additional_dependencies:
-          - prettier@3.0.0 # npm
+          - prettier@3.0.3 # npm
           - prettier-plugin-sh@0.13.1 # npm
-          - prettier-plugin-toml@0.3.1 # npm
+          - prettier-plugin-toml@0.3.5 # npm
         exclude: |-
           (?x)^(
               \.gitattributes
               |\.gitignore
           )$
   - repo: https://github.com/shellcheck-py/shellcheck-py
-    rev: v0.9.0.2
+    rev: v0.9.0.5
     hooks:
       - id: shellcheck
   - repo: https://github.com/jumanjihouse/pre-commit-hooks
@@ -108,11 +108,11 @@ repos:
           - --builtin-schema
           - github-workflows-require-timeout
   - repo: https://github.com/sirwart/ripsecrets.git
-    rev: v0.1.5
+    rev: v0.1.6
     hooks:
       - id: ripsecrets
   - repo: https://github.com/sirwart/ripsecrets
-    rev: v0.1.5
+    rev: v0.1.6
     hooks:
       - id: ripsecrets
   - repo: https://github.com/PyCQA/prospector
