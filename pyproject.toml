@@ -50,7 +50,7 @@ update_stabilization_branches = ["c2cciutils"]
 prospector = { extras = ["with_bandit", "with_mypy", "with_pyroma"], version = "1.10.2" }
 types-PyYAML = "6.0.12.11"
 types-requests = "2.31.0.2"
-prospector-profile-duplicated = "0.1.0"
+prospector-profile-duplicated = "0.3.0"
 
 [tool.poetry.scripts]
 mra-update-stabilization-branches = 'multi_repo_automation:update_stabilization_branches_main'
