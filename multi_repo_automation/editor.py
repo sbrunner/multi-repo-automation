@@ -78,7 +78,7 @@ class _Edit:
                 os.remove(self.filename)
                 return False
 
-            new_data = self.dump(self.data)
+            new_data = self.dump(self.data) if self.data else ""
             if self.force or new_data != self.original_data:
                 if self.add_pre_commit_configuration_if_modified:
                     self.add_pre_commit_hook()
