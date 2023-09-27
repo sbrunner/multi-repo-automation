@@ -582,6 +582,9 @@ class EditRenovateConfig(Edit):
     def add(self, data: str, test: str) -> None:
         """Add an other setting to the renovate config."""
 
+        if test not in data:
+            raise ValueError(f"Test '{test}' not found in data '{data}'.")
+
         if test in self.data:
             return
 
@@ -621,10 +624,13 @@ class EditRenovateConfig(Edit):
     def add_regex_manager(self, data: Union[str, list[Any], dict[str, Any]], test: str) -> None:
         """Add a regex manager to the Renovate config."""
 
+        data = self._clean_data(data)
+
+        if test not in data:
+            raise ValueError(f"Test '{test}' not found in data '{data}'.")
+
         if test in self.data:
             return
-
-        data = self._clean_data(data)
 
         if "regexManagers" in self.data:
             if "packageRules" in self.data:
@@ -644,10 +650,13 @@ class EditRenovateConfig(Edit):
     def add_package_rule(self, data: Union[str, list[Any], dict[str, Any]], test: str) -> None:
         """Add a package rule to the Renovate config."""
 
+        data = self._clean_data(data)
+
+        if test not in data:
+            raise ValueError(f"Test '{test}' not found in data '{data}'.")
+
         if test in self.data:
             return
-
-        data = self._clean_data(data)
 
         if "packageRules" in self.data:
             index = self.data.rindex("]")
