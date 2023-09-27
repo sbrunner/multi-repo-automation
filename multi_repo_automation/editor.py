@@ -545,6 +545,28 @@ class EditPreCommitConfig(EditYAML):
                             [f.strip() for f in files_list], add_start_end=add_start_end
                         )
 
+    def dump(self, data: dict[str, Any]) -> str:
+        """Load the file."""
+
+        new_data = []
+        for key in ["ci"]:
+            if key in data:
+                new_data.append((key, data[key]))
+
+        new_data += [e for e in data.items() if e[0] not in ("ci", "repos")]
+
+        data = ruamel.yaml.comments.CommentedMap(new_data)
+
+        for key in ["repos"]:
+            data.ca.items[key] = [
+                None,
+                None,
+                ruamel.yaml.CommentToken("\n\n", ruamel.yaml.error.CommentMark(0), None),
+                None,
+            ]
+
+        return super().dump(data)
+
 
 class EditRenovateConfig(Edit):
     """
