@@ -545,6 +545,28 @@ class EditPreCommitConfig(EditYAML):
                             [f.strip() for f in files_list], add_start_end=add_start_end
                         )
 
+    def dump(self, data: dict[str, Any]) -> str:
+        """Load the file."""
+
+        new_data = []
+        for key in ["ci"]:
+            if key in data:
+                new_data.append((key, data[key]))
+
+        new_data += [e for e in data.items() if e[0] not in ("ci", "repos")]
+
+        data = ruamel.yaml.comments.CommentedMap(new_data)
+
+        for key in ["repos"]:
+            data.ca.items[key] = [
+                None,
+                None,
+                ruamel.yaml.CommentToken("\n\n", ruamel.yaml.error.CommentMark(0), None),
+                None,
+            ]
+
+        return super().dump(data)
+
 
 class EditRenovateConfig(Edit):
     """
@@ -559,6 +581,9 @@ class EditRenovateConfig(Edit):
 
     def add(self, data: str, test: str) -> None:
         """Add an other setting to the renovate config."""
+
+        if test not in data:
+            raise ValueError(f"Test '{test}' not found in data '{data}'.")
 
         if test in self.data:
             return
@@ -599,10 +624,13 @@ class EditRenovateConfig(Edit):
     def add_regex_manager(self, data: Union[str, list[Any], dict[str, Any]], test: str) -> None:
         """Add a regex manager to the Renovate config."""
 
+        data = self._clean_data(data)
+
+        if test not in data:
+            raise ValueError(f"Test '{test}' not found in data '{data}'.")
+
         if test in self.data:
             return
-
-        data = self._clean_data(data)
 
         if "regexManagers" in self.data:
             if "packageRules" in self.data:
@@ -622,10 +650,13 @@ class EditRenovateConfig(Edit):
     def add_package_rule(self, data: Union[str, list[Any], dict[str, Any]], test: str) -> None:
         """Add a package rule to the Renovate config."""
 
+        data = self._clean_data(data)
+
+        if test not in data:
+            raise ValueError(f"Test '{test}' not found in data '{data}'.")
+
         if test in self.data:
             return
-
-        data = self._clean_data(data)
 
         if "packageRules" in self.data:
             index = self.data.rindex("]")
