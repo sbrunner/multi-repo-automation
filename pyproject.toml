@@ -36,8 +36,8 @@ repository = "https://github.com/sbrunner/multi-repo-automation"
 python = ">=3.9,<4.0"
 PyYAML = "6.0.1"
 requests = "2.31.0"
-"ruamel.yaml" = "0.17.32"
-identify = "2.5.27"
+"ruamel.yaml" = "0.17.33"
+identify = "2.5.30"
 c2cciutils = { version = "1.5.8", optional = true }
 tomlkit = "0.12.1"
 configupdater = "3.1.1"
@@ -48,8 +48,8 @@ update_stabilization_branches = ["c2cciutils"]
 
 [tool.poetry.group.dev.dependencies]
 prospector = { extras = ["with_bandit", "with_mypy", "with_pyroma"], version = "1.10.2" }
-types-PyYAML = "6.0.12.11"
-types-requests = "2.31.0.2"
+types-PyYAML = "6.0.12.12"
+types-requests = "2.31.0.7"
 prospector-profile-duplicated = "0.3.0"
 
 [tool.poetry.scripts]
