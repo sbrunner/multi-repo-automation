@@ -38,10 +38,10 @@ PyYAML = "6.0.1"
 requests = "2.31.0"
 "ruamel.yaml" = "0.17.33"
 identify = "2.5.30"
-c2cciutils = { version = "1.5.8", optional = true }
+c2cciutils = { version = "1.6.10", optional = true }
 tomlkit = "0.12.1"
 configupdater = "3.1.1"
-typing_extensions = "4.7.1"
+typing_extensions = "4.8.0"
 
 [tool.poetry.extras]
 update_stabilization_branches = ["c2cciutils"]
