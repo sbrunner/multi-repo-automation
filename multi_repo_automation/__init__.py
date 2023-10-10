@@ -11,8 +11,9 @@ from distutils.version import (  # pylint: disable=deprecated-module,useless-sup
     LooseVersion,
 )
 from types import TracebackType
-from typing import Any, Callable, Literal, Optional, cast
+from typing import Any, Callable, Literal, Optional
 
+import c2cciutils.security
 import requests
 import yaml
 from identify import identify
@@ -477,7 +478,6 @@ def get_stabilization_versions(repo: Repo) -> list[str]:
 
     From the `SECURITY.md` file.
     """
-    import c2cciutils.security  # pylint: disable=import-outside-toplevel
 
     stabilization_versions = []
     security_response = requests.get(
@@ -502,27 +502,35 @@ def get_stabilization_versions(repo: Repo) -> list[str]:
     return stabilization_versions
 
 
-def get_stabilization_branches(repo: Repo) -> list[str]:
+def get_stabilization_branches(repo: Repo) -> set[str]:
     """
     Update the list of stabilization branches in the repo.
 
     From the     `SECURITY.md` file.
     """
 
-    stabilization_versions = get_stabilization_versions(repo)
-    stabilization_version_to_branch: dict[str, str] = repo.get("stabilization_version_to_branch", {})
-    return [stabilization_version_to_branch.get(v, v) for v in stabilization_versions]
+    if "stabilization_branches" in repo:
+        return set(repo["stabilization_branches"])
 
+    remotes = [r for r in run(["git", "remote"], stdout=subprocess.PIPE).stdout.split() if r != ""]
+    remote_branches = [
+        b.strip()[len("remotes/") :]
+        for b in run(["git", "branch", "--all"], stdout=subprocess.PIPE).stdout.split()
+        if b != "" and b.strip().startswith("remotes/")
+    ]
+    if "upstream" in remotes:
+        remote_branches = [b[len("upstream") + 1 :] for b in remote_branches if b.startswith("upstream/")]
+    elif "origin" in remotes:
+        remote_branches = [b[len("origin") + 1 :] for b in remote_branches if b.startswith("origin/")]
+    else:
+        remote_branches = ["/".join(b.split("/")[1:]) for b in remote_branches]
 
-def update_stabilization_branches(repo: Repo) -> None:
-    """
-    Update the list of stabilization branches in the repo.
+    config = c2cciutils.get_config()
+    branch_re = c2cciutils.compile_re(config["version"].get("branch_to_version_re", []))
+    branches_match = [c2cciutils.match(b, branch_re) for b in remote_branches]
+    version_branch = {m.groups()[0] if m.groups() else b: b for m, c, b in branches_match if m is not None}
 
-    From the     `SECURITY.md` file.
-    """
-    stabilization_branches = get_stabilization_branches(repo)
-    if stabilization_branches:
-        repo["stabilization_branches"] = stabilization_branches
+    return {version_branch.get(version, version) for version in get_stabilization_versions(repo)}
 
 
 def do_on_base_branches(
@@ -530,7 +538,7 @@ def do_on_base_branches(
 ) -> list[str]:
     """Do the func action on all the base branches of the repo."""
     result = set()
-    branches = [*(repo.get("stabilization_branches") or []), repo.get("master_branch", "master")]
+    branches = [*get_stabilization_branches(repo), repo.get("master_branch", "master")]
     for branch in branches:
         create_branch = CreateBranch(
             repo,
@@ -604,9 +612,11 @@ class App:
                         print(f"=== {repo['name']} ===")
                         with Cwd(repo):
                             if self.do_pr:
-                                base_branches: set[str] = {repo.get("master_branch", "master")}
-                                if self.do_pr_on_stabilization_branches:
-                                    base_branches.update(repo.get("stabilization_branches") or [])
+                                base_branches: set[str] = (
+                                    get_stabilization_branches(repo)
+                                    if self.do_pr_on_stabilization_branches
+                                    else {repo.get("master_branch", "master")}
+                                )
 
                                 for base_branch in base_branches:
                                     self.kwargs["base_branch"] = base_branch
@@ -751,24 +761,3 @@ def main(
             pull_request_body=pull_request_body,
         )
     app.run()
-
-
-def update_stabilization_branches_main() -> None:
-    """Update the stabilization branches."""
-    user_config = {}
-    if os.path.exists(CONFIG_PATH):
-        with open(CONFIG_PATH, encoding="utf-8") as config_file:
-            user_config = yaml.load(config_file, Loader=yaml.SafeLoader)
-    repos_filename: str = user_config.get("repos_filename", "repos.yaml")
-
-    args_parser = argparse.ArgumentParser(description="Update the stabilization branches.")
-    args_parser.add_argument(
-        "--repositories", default=repos_filename, help="A YAML file that contains the repositories."
-    )
-    args_parser.add_argument("--diff", action="store_true", help="Only show the diff")
-    args = args_parser.parse_args()
-
-    with EditYAML(args.repositories, diff=args.diff, run_pre_commit=False) as repos:
-        assert isinstance(repos, EditYAML)
-        for repo in repos:
-            update_stabilization_branches(cast(Repo, repo))

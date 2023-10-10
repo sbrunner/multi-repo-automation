@@ -68,7 +68,7 @@ jobs:
       - run: echo "${HOME}/.local/bin" >> ${GITHUB_PATH}
       - run: pip install --requirement=requirements.txt
 
-      - run: poetry install --extras=update_stabilization_branches
+      - run: poetry install
       - name: Versions
         run: |
           poetry --version
