@@ -76,7 +76,6 @@ class Repo(TypedDict, total=False):
     master_branch: str
     remote: str
     stabilization_branches: list[str]
-    stabilization_version_to_branch: dict[str, str]
     folders_to_clean: list[str]
     clean: bool
 

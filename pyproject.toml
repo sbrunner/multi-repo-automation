@@ -38,13 +38,11 @@ PyYAML = "6.0.1"
 requests = "2.31.0"
 "ruamel.yaml" = "0.17.33"
 identify = "2.5.30"
-c2cciutils = { version = "1.6.10", optional = true }
+c2cciutils = "1.6.10"
 tomlkit = "0.12.1"
 configupdater = "3.1.1"
 typing_extensions = "4.8.0"
 
-[tool.poetry.extras]
-update_stabilization_branches = ["c2cciutils"]
 
 [tool.poetry.group.dev.dependencies]
 prospector = { extras = ["with_bandit", "with_mypy", "with_pyroma"], version = "1.10.2" }
@@ -53,7 +51,6 @@ types-requests = "2.31.0.7"
 prospector-profile-duplicated = "0.3.0"
 
 [tool.poetry.scripts]
-mra-update-stabilization-branches = 'multi_repo_automation:update_stabilization_branches_main'
 mra-yaml = "multi_repo_automation.commented_yaml:main"
 
 [build-system]
