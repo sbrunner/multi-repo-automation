@@ -124,6 +124,15 @@ class Cwd:
         return False
 
 
+def get_default_branch() -> str:
+    """Get the default branch name."""
+
+    return run(
+        ["gh", "repo", "view", "--json", "defaultBranchRef", "--jq", ".defaultBranchRef.name"],
+        stdout=subprocess.PIPE,
+    ).stdout.strip()
+
+
 class CreateBranch:
     """
     Create a branch in a with instruction.
@@ -160,7 +169,7 @@ class CreateBranch:
         """Initialize."""
         self.repo = repo
         if base_branch is None:
-            base_branch = repo.get("master_branch", "master")
+            base_branch = get_default_branch()
         self.base_branch = base_branch
         self.new_branch_name = new_branch_name
         self.commit_message = commit_message
@@ -254,7 +263,7 @@ def create_pull_request(
     if not run(["git", "status", "--short"], stdout=subprocess.PIPE).stdout.strip():
         return False, ""
     if base_branch is None:
-        base_branch = repo.get("master_branch", "master")
+        base_branch = get_default_branch()
     cmd = [
         "gh",
         "pr",
@@ -492,13 +501,14 @@ def get_stabilization_versions(repo: Repo) -> list[str]:
         support_index = security.headers.index("Supported Until")
         versions = set()
         for data in security.data:
-            if data[support_index] != "Unsupported" and data[version_index] != repo.get(
-                "master_branch", "master"
-            ):
+            if data[support_index] != "Unsupported" and data[version_index] != get_default_branch():
                 versions.add(data[version_index])
         if versions:
             stabilization_versions = list(versions)
-            stabilization_versions.sort(key=LooseVersion)
+            try:
+                stabilization_versions.sort(key=LooseVersion)
+            except TypeError:
+                stabilization_versions.sort()
     return stabilization_versions
 
 
@@ -538,7 +548,10 @@ def do_on_base_branches(
 ) -> list[str]:
     """Do the func action on all the base branches of the repo."""
     result = set()
-    branches = [*get_stabilization_branches(repo), repo.get("master_branch", "master")]
+    branches = [
+        *get_stabilization_branches(repo),
+        get_default_branch(),
+    ]
     for branch in branches:
         create_branch = CreateBranch(
             repo,
@@ -615,7 +628,7 @@ class App:
                                 base_branches: set[str] = (
                                     get_stabilization_branches(repo)
                                     if self.do_pr_on_stabilization_branches
-                                    else {repo.get("master_branch", "master")}
+                                    else {get_default_branch()}
                                 )
 
                                 for base_branch in base_branches:
@@ -683,13 +696,13 @@ def main(
         "--pull-request-body", help="The pull request body.", default=config.get("pull_request_body", None)
     )
     args_parser_master = args_parser.add_argument_group(
-        "master", "To apply the action on all master branches."
+        "default", "To apply the action on all default branches."
     )
     args_parser_master.add_argument(
-        "--branch", help="The created branch branch name.", default=config.get("branch", None)
+        "--branch", help="The created branch name.", default=config.get("branch", None)
     )
     args_parser_stabilization = args_parser.add_argument_group(
-        "stabilization", "To apply the action on all stabilization (including master) branches."
+        "stabilization", "To apply the action on all stabilization branches."
     )
     if "pull_request_on_stabilization_branches" not in config:
         args_parser_stabilization.add_argument(
