@@ -22,10 +22,15 @@ import multi_repo_automation.tools
 from multi_repo_automation.editor import (  # noqa
     Edit,
     EditConfig,
+    EditJSON5,
     EditPreCommitConfig,
     EditRenovateConfig,
+    EditRenovateConfigV2,
     EditTOML,
     EditYAML,
+    JSON5Dict,
+    JSON5List,
+    JSON5RowAttribute,
 )
 from multi_repo_automation.tools import (  # noqa
     Repo,
