@@ -2,7 +2,6 @@
 
 import difflib
 import io
-import json
 import os
 import subprocess  # nosec
 import sys
@@ -12,6 +11,7 @@ from collections.abc import ItemsView, Iterator, KeysView, ValuesView
 from types import TracebackType
 from typing import Any, Literal, Optional, TypedDict, Union, cast
 
+import json5
 import ruamel.yaml.comments
 import ruamel.yaml.scalarstring
 import tomlkit
@@ -610,9 +610,9 @@ class EditRenovateConfig(Edit):
 
     def _clean_data(self, data: Union[str, list[Any], dict[str, Any]]) -> str:
         if isinstance(data, dict):
-            data = json.dumps(data, indent=2)
+            data = json5.dumps(data, indent=2)
         if isinstance(data, list):
-            data = json.dumps(data, indent=2)
+            data = json5.dumps(data, indent=2)
             data = data.strip()
             data = data.lstrip("[")
             data = data.rstrip("]")
