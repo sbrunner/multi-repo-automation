@@ -505,6 +505,8 @@ class EditPreCommitConfig(EditYAML):
 
     def skip_ci(self, hook_id: str) -> None:
         """Add hook in the list that will be ignore by pre-commit.ci."""
+
+        no_skip = "skip" not in self.setdefault("ci", {})
         if hook_id not in self.setdefault("ci", {}).setdefault("skip", []):
             if hasattr(self["ci"]["skip"], "ca"):
                 yaml_hooks = ruamel.yaml.comments.CommentedSeq([*self["ci"]["skip"], hook_id])
@@ -514,6 +516,9 @@ class EditPreCommitConfig(EditYAML):
                 self["ci"]["skip"] = yaml_hooks
             else:
                 self["ci"]["skip"].append(hook_id)
+
+            if no_skip:
+                self["ci"] = dict(self["ci"])
 
     def fix_files(self) -> None:
         """Fix the files regex."""
@@ -557,7 +562,7 @@ class EditPreCommitConfig(EditYAML):
 
         data = ruamel.yaml.comments.CommentedMap(new_data)
 
-        for key in ["repos"]:
+        for key in ["ci"]:
             data.ca.items[key] = [
                 None,
                 None,
