@@ -361,22 +361,21 @@ class Branch:
         """Create a new branch."""
         for folder in self.repo.get("folders_to_clean") or []:
             shutil.rmtree(folder, ignore_errors=True)
-        if self.repo.get("clean", True):
+        if self.repo.get("clean", False):
             run(["git", "clean", "-dfX"])
             self.has_stashed = run(["git", "stash", "--all"], False).returncode == 0
         else:
-            self.has_stashed = run(["git", "stash"], False).returncode == 0
+            self.has_stashed = run(["git", "stash", "--all"], False).returncode == 0
 
         if self.old_branch_name != self.branch_name:
             run(["git", "branch", "--delete", "--force", self.branch_name], False)
+            run(["git", "fetch", f"{self.repo.get('remote', 'origin')}"])
             run(
                 [
                     "git",
                     "checkout",
                     "-b",
                     self.branch_name,
-                    f"{self.repo.get('remote', 'origin')}/{self.repo.get('master_branch', 'branch')}",
-                    "--track",
                     f"{self.repo.get('remote', 'origin')}/{self.branch_name}",
                 ],
             )
@@ -526,7 +525,7 @@ def get_stabilization_branches(repo: Repo) -> set[str]:
     """
     Update the list of stabilization branches in the repo.
 
-    From the     `SECURITY.md` file.
+    From the `SECURITY.md` file.
     """
 
     if "stabilization_branches" in repo:
