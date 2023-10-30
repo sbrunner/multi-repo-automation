@@ -129,13 +129,18 @@ class Cwd:
         return False
 
 
+DEFAULT_BRANCH_CACHE: dict[str, str] = {}
+
+
 def get_default_branch() -> str:
     """Get the default branch name."""
 
-    return run(
-        ["gh", "repo", "view", "--json", "defaultBranchRef", "--jq", ".defaultBranchRef.name"],
-        stdout=subprocess.PIPE,
-    ).stdout.strip()
+    if os.getcwd() not in DEFAULT_BRANCH_CACHE:
+        DEFAULT_BRANCH_CACHE[os.getcwd()] = run(
+            ["gh", "repo", "view", "--json", "defaultBranchRef", "--jq", ".defaultBranchRef.name"],
+            stdout=subprocess.PIPE,
+        ).stdout.strip()
+    return DEFAULT_BRANCH_CACHE[os.getcwd()]
 
 
 class CreateBranch:
