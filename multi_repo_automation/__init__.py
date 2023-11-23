@@ -11,7 +11,7 @@ from distutils.version import (  # pylint: disable=deprecated-module,useless-sup
     LooseVersion,
 )
 from types import TracebackType
-from typing import Any, Callable, Literal, Optional
+from typing import Any, Callable, Literal, Optional, TypedDict, cast
 
 import c2cciutils.security
 import requests
@@ -31,6 +31,8 @@ from multi_repo_automation.editor import (  # noqa
     JSON5Dict,
     JSON5List,
     JSON5RowAttribute,
+    JSON5RowDict,
+    JSON5RowList,
 )
 from multi_repo_automation.tools import (  # noqa
     Repo,
@@ -60,7 +62,6 @@ _ARGUMENTS: Optional[argparse.Namespace] = None
 
 def get_arguments() -> argparse.Namespace:
     """Get the global arguments."""
-
     assert _ARGUMENTS is not None
     return _ARGUMENTS
 
@@ -134,7 +135,6 @@ DEFAULT_BRANCH_CACHE: dict[str, str] = {}
 
 def get_default_branch() -> str:
     """Get the default branch name."""
-
     if os.getcwd() not in DEFAULT_BRANCH_CACHE:
         DEFAULT_BRANCH_CACHE[os.getcwd()] = run(
             ["gh", "repo", "view", "--json", "defaultBranchRef", "--jq", ".defaultBranchRef.name"],
@@ -490,47 +490,94 @@ def replace(filename: str, search_text: str, replace_text: str) -> None:
         file_.write(content)
 
 
-def get_stabilization_versions(repo: Repo) -> list[str]:
-    """
-    Update the list of stabilization branches in the repo.
-
-    From the `SECURITY.md` file.
-    """
-
-    stabilization_versions = []
+def get_security(repo: Repo) -> Optional[c2cciutils.security.Security]:
+    """Get the security file, parsed."""
     security_response = requests.get(
         f"https://raw.githubusercontent.com/{repo['name']}/{repo.get('master_branch', 'master')}/SECURITY.md",
         headers=c2cciutils.add_authorization_header({}),
         timeout=30,
     )
     if security_response.ok:
-        security = c2cciutils.security.Security(security_response.text)
-
-        version_index = security.headers.index("Version")
-        support_index = security.headers.index("Supported Until")
-        versions = set()
-        for data in security.data:
-            if data[support_index] != "Unsupported" and data[version_index] != get_default_branch():
-                versions.add(data[version_index])
-        if versions:
-            stabilization_versions = list(versions)
-            try:
-                stabilization_versions.sort(key=LooseVersion)
-            except TypeError:
-                stabilization_versions.sort()
-    return stabilization_versions
+        return c2cciutils.security.Security(security_response.text)
+    return None
 
 
-def get_stabilization_branches(repo: Repo) -> set[str]:
+class VersionSupport(TypedDict):
+    """The version with support until date."""
+
+    version: str
+    supported_until: str
+
+
+def _get_version_support(data: list[Any], version_index: int, support_index: int) -> VersionSupport:
+    return {
+        "version": cast(str, data[version_index]),
+        "supported_until": cast(str, data[support_index]),
+    }
+
+
+def get_stabilization_versions_support(repo: Repo) -> list[VersionSupport]:
     """
     Update the list of stabilization branches in the repo.
 
     From the `SECURITY.md` file.
     """
+    versions: list[VersionSupport] = []
+    security = get_security(repo)
+    if security is not None:
+        if "Version" not in security.headers:
+            return versions
+        version_index = security.headers.index("Version")
+        support_index = security.headers.index("Supported Until")
+        for data in security.data:
+            if data[support_index] != "Unsupported" and data[version_index] != get_default_branch():
+                versions.append(
+                    {
+                        "version": data[version_index],
+                        "supported_until": data[support_index],
+                    }
+                )
+    return versions
 
-    if "stabilization_branches" in repo:
-        return set(repo["stabilization_branches"])
 
+def get_stabilization_versions(repo: Repo) -> list[str]:
+    """
+    Update the list of stabilization branches in the repo.
+
+    From the `SECURITY.md` file.
+    """
+    stabilization_versions = []
+    versions_support = get_stabilization_versions_support(repo)
+    versions = {data["version"] for data in versions_support}
+    if versions:
+        stabilization_versions = list(versions)
+        try:
+            stabilization_versions.sort(key=LooseVersion)
+        except TypeError:
+            stabilization_versions.sort()
+    return stabilization_versions
+
+
+class BranchSupport(TypedDict):
+    """The branch with support until date."""
+
+    branch: str
+    supported_until: str
+
+
+def _get_branch_support(version_branch: dict[str, Any], version: VersionSupport) -> BranchSupport:
+    return {
+        "branch": cast(str, version_branch[version["version"]]),
+        "supported_until": version["supported_until"],
+    }
+
+
+def get_stabilization_branches_support(repo: Repo) -> list[BranchSupport]:
+    """
+    Update the list of stabilization branches in the repo.
+
+    From the `SECURITY.md` file.
+    """
     remotes = [r for r in run(["git", "remote"], stdout=subprocess.PIPE).stdout.split() if r != ""]
     remote_branches = [
         b.strip()[len("remotes/") :]
@@ -549,7 +596,23 @@ def get_stabilization_branches(repo: Repo) -> set[str]:
     branches_match = [c2cciutils.match(b, branch_re) for b in remote_branches]
     version_branch = {m.groups()[0] if m.groups() else b: b for m, c, b in branches_match if m is not None}
 
-    return {version_branch.get(version, version) for version in get_stabilization_versions(repo)}
+    return [
+        _get_branch_support(version_branch, version)
+        for version in get_stabilization_versions_support(repo)
+        if version["version"] in version_branch
+    ]
+
+
+def get_stabilization_branches(repo: Repo) -> set[str]:
+    """
+    Update the list of stabilization branches in the repo.
+
+    From the `SECURITY.md` file.
+    """
+    if "stabilization_branches" in repo:
+        return set(repo["stabilization_branches"])
+
+    return {branch["branch"] for branch in get_stabilization_branches_support(repo)}
 
 
 def do_on_base_branches(
@@ -621,7 +684,6 @@ class App:
 
     def run(self) -> None:
         """Run the conversion."""
-
         if self.local:
             self.action()
             return
@@ -678,7 +740,6 @@ def main(
     add_arguments: Optional[Callable[[argparse.ArgumentParser], None]] = None,
 ) -> None:
     """Apply an action on all the repos."""
-
     config = config or {}
     user_config = {}
     if os.path.exists(CONFIG_PATH):
