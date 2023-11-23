@@ -10,7 +10,6 @@ import ruamel.yaml
 
 def commented_sec(value: list[Union[tuple[Any], tuple[Any, str]]]) -> ruamel.yaml.comments.CommentedSeq:
     """Get a commented list (for ruamel)."""
-
     result = ruamel.yaml.comments.CommentedSeq([v[0] for v in value])
     for key, val in enumerate(value):
         if len(val) == 2:
@@ -24,7 +23,6 @@ def commented_map(
     value: dict[str, Union[tuple[Any], tuple[Any, str], tuple[Any, str, int]]]
 ) -> ruamel.yaml.comments.CommentedMap:
     """Get a commented dictionary (for ruamel)."""
-
     result = ruamel.yaml.comments.CommentedMap({k: v[0] for k, v in value.items()})
     for key, val in value.items():
         if len(val) != 1:
@@ -62,7 +60,6 @@ def folder_scalar_string(value: list[str]) -> ruamel.yaml.scalarstring.FoldedSca
 
 def get_python(value: Any, prefix: str = "") -> str:
     """Convert a YAML object to a Python object."""
-
     if isinstance(value, dict):
         if value.ca.items:  # type: ignore[attr-defined]
             comments = {}
@@ -175,7 +172,6 @@ seq:
 
 def main() -> Any:
     """Convert YAML to Python, with comment."""
-
     parser = argparse.ArgumentParser(
         "Convert YAML to Python, with comment (for ruamel)", usage="cat file.yaml > %(prog)s -"
     )

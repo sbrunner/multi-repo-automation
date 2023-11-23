@@ -1,49 +1,15 @@
 inherits:
+  - utils:base
+  - utils:no-design-checks
   - duplicated
 
-strictness: veryhigh
-max-line-length: 110
 doc-warnings: true
-
-pylint:
-  disable:
-    - too-many-arguments
-    - too-many-statements
-    - too-many-locals
-    - too-many-instance-attributes
-    - too-many-branches
-    - too-many-lines
-    - too-many-nested-blocks
-    - trailing-whitespace
-
-pycodestyle:
-  disable:
-    - E501 # line too long
-    - E641 # at least two spaces before inline comment
-    - E261 # at least two spaces before inline comment
-    - W293 # blank line contains whitespace
 
 pydocstyle:
   disable:
-    - D102 # Missing docstring in public method, duplicate with PyLint
     - D105 # Missing docstring in magic method
     - D107 # Missing docstring in __init__
-    - D200 # one-line docstring should fit on one line with quotes
-    - D202 # no blank lines after function docstring
-    - D203 # 1 blank line required before class docstring
-    - D204 # 1 blank line required after class docstring
-    - D212 # multi-line docstring summary should start at the first line
-    - D213 # multi-line docstring summary should start at the second line
+
 bandit:
-  run: true
   options:
     config: .bandit.yaml
-
-mypy:
-  run: true
-
-pyroma:
-  run: true
-
-mccabe:
-  run: false

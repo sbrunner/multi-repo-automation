@@ -79,6 +79,11 @@ class _Edit:
         """Load the file."""
         return self
 
+    def is_modified(self) -> bool:
+        """Check if the file has been modified."""
+        new_data = self.dump(self.data) if self.data else ""
+        return new_data != self.original_data
+
     def __exit__(
         self,
         exc_type: Optional[type[BaseException]],
@@ -275,7 +280,6 @@ class EditYAML(_EditDict, dict[str, Any]):
         **kwargs: Any,
     ):
         """Initialize the object."""
-
         self.yaml = ruamel.yaml.YAML()
         self.yaml.default_flow_style = default_flow_style
         self.yaml.width = width
@@ -295,6 +299,7 @@ class EditYAML(_EditDict, dict[str, Any]):
         return out.getvalue()
 
     def add_pre_commit_hook(self) -> None:
+        """Add the pre-commit hook to format the file."""
         with EditPreCommitConfig() as pre_commit_config:
             assert isinstance(pre_commit_config, EditPreCommitConfig)
             pre_commit_config.add_repo("https://github.com/pre-commit/mirrors-prettier", "v2.7.1")
@@ -310,27 +315,22 @@ class EditYAML(_EditDict, dict[str, Any]):
 
     def values(self) -> DictValuesStrAny:
         """Return the values."""
-
         return self.data.values()
 
     def keys(self) -> DictKeysStrAny:
         """Return the keys."""
-
         return self.data.keys()
 
     def items(self) -> DictItemsStrAny:
         """Return the items."""
-
         return self.data.items()
 
     def __contains__(self, key: str) -> bool:  # type: ignore[override]
         """Check if the key is in the data."""
-
         return key in self.data
 
     def update(self, other: dict[str, Any], **kwargs: Any) -> None:  # type: ignore[override]
         """Update the data."""
-
         self.data.update(other, **kwargs)
 
 
@@ -353,6 +353,7 @@ class EditTOML(_EditDict):
         return tomlkit.dumps(data)
 
     def add_pre_commit_hook(self) -> None:
+        """Add the pre-commit hook to format the file."""
         with EditPreCommitConfig() as pre_commit_config:
             assert isinstance(pre_commit_config, EditPreCommitConfig)
             pre_commit_config.add_repo("https://github.com/pre-commit/mirrors-prettier", "v2.7.1")
@@ -386,7 +387,6 @@ class EditConfig(_EditDict):
         **kwargs: Any,
     ):
         """Initialize the object."""
-
         self.updater = ConfigUpdater()
         super().__init__(filename, **kwargs)
 
@@ -396,7 +396,6 @@ class EditConfig(_EditDict):
 
     def dump(self, data: Any) -> str:
         """Load the file."""
-
         out = io.StringIO()
         data.write(out)
         return out.getvalue()
@@ -454,12 +453,12 @@ class EditPreCommitConfig(EditYAML):
         super().__init__(filename, **kwargs)
 
         self.repos_hooks: dict[str, _RepoHook] = {}
-        for repo in self["repos"]:
+        for repo in self.setdefault("repos", {}):
             self.repos_hooks.setdefault(
                 repo["repo"], {"repo": repo, "hooks": {hook["id"]: hook for hook in repo["hooks"]}}
             )
         for repo in self["repos"]:
-            for hook in repo["hooks"]:
+            for hook in repo.setdefault("hooks", []):
                 for tag in ("files", "excludes"):
                     if tag in hook and hook[tag].strip().startswith("(?x)"):
                         hook[tag] = ruamel.yaml.scalarstring.LiteralScalarString(hook[tag].strip())
@@ -471,11 +470,10 @@ class EditPreCommitConfig(EditYAML):
             self.original_data = self.dump(self.data)
 
     def add_pre_commit_hook(self) -> None:
-        pass
+        """Add the pre-commit hook (none needed)."""
 
     def add_repo(self, repo: str, rev: Optional[str] = None) -> None:
         """Add a repo to the pre-commit config."""
-
         if rev is None:
             rev = run(
                 ["gh", "release", "view", f"--repo={repo}", "--json=tagName", "--template={{.tagName}}"],
@@ -490,7 +488,6 @@ class EditPreCommitConfig(EditYAML):
 
     def add_hook(self, repo: str, hook: PreCommitHook, ci_skip: bool = False) -> None:
         """Add a hook to the pre-commit config."""
-
         if hook["id"] not in self.repos_hooks[repo]["hooks"]:
             self.repos_hooks[repo]["repo"]["hooks"].append(hook)
             self.repos_hooks[repo]["hooks"][hook["id"]] = hook
@@ -549,7 +546,6 @@ class EditPreCommitConfig(EditYAML):
 
     def skip_ci(self, hook_id: str) -> None:
         """Add hook in the list that will be ignore by pre-commit.ci."""
-
         no_skip = "skip" not in self.setdefault("ci", {})
         if hook_id not in self.setdefault("ci", {}).setdefault("skip", []):
             if hasattr(self["ci"]["skip"], "ca"):
@@ -566,7 +562,6 @@ class EditPreCommitConfig(EditYAML):
 
     def fix_files(self) -> None:
         """Fix the files regex."""
-
         for repo in self.data["repos"]:
             for hook in repo["hooks"]:
                 for attribute in ("files", "exclude"):
@@ -596,7 +591,6 @@ class EditPreCommitConfig(EditYAML):
 
     def dump(self, data: dict[str, Any]) -> str:
         """Load the file."""
-
         new_data = []
         for key in ["ci"]:
             if key in data:
@@ -630,7 +624,6 @@ class EditRenovateConfig(Edit):
 
     def add(self, data: str, test: str) -> None:
         """Add an other setting to the renovate config."""
-
         if test not in data:
             raise ValueError(f"Test '{test}' not found in data '{data}'.")
 
@@ -676,7 +669,6 @@ class EditRenovateConfig(Edit):
         self, data: Union[str, list[Any], dict[str, Any]], test: str, comment: Optional[str] = None
     ) -> None:
         """Add a regex manager to the Renovate config."""
-
         data = self._clean_data(data)
         if comment:
             data = f"/** {comment} */\n" + data
@@ -706,7 +698,6 @@ class EditRenovateConfig(Edit):
         self, data: Union[str, list[Any], dict[str, Any]], test: str, comment: Optional[str] = None
     ) -> None:
         """Add a package rule to the Renovate config."""
-
         data = self._clean_data(data)
         if comment:
             data = f"/** {comment} */\n" + data
@@ -725,14 +716,13 @@ class EditRenovateConfig(Edit):
             self.data = self.data[:index] + f" packageRules: [{data}],\n" + self.data[index:]
 
 
-class JSON5Item:  # pylint: disable=too-few-public-methods
+class JSON5Item:
     """JSON5 item with comments (abstract class)."""
 
     comment: list[str] = []
 
     def data(self) -> Any:
         """Return the data, no comments."""
-
         raise NotImplementedError()
 
 
@@ -743,7 +733,6 @@ class JSON5RowAttribute(JSON5Item):
 
     def data(self) -> Any:
         """Return the data, no comments."""
-
         return self.value
 
     def __getitem__(self, key: Union[str, int]) -> Any:
@@ -754,68 +743,70 @@ class JSON5RowAttribute(JSON5Item):
 
     def __delitem__(self, key: str) -> None:
         """Delete the key."""
-
         del self.value[key]
 
     def __contains__(self, key: str) -> bool:
         """Check if the key is in the data."""
-
         return key in self.value
 
     def __iter__(self) -> Iterator[str]:
         """Iterate over the keys."""
-
         return iter(self.value)
 
     def __len__(self) -> int:
         """Return the number of keys."""
-
         return len(self.value)
 
     def get(self, key: str, default: Any = None) -> Any:
         """Get the value for the key."""
-
         return self.value.get(key, default)
 
     def setdefault(self, key: str, default: Any = None) -> Any:
         """Set the default value for the key."""
-
         return self.value.setdefault(key, default)
-
-    def keys(self) -> DictKeysStrAny:
-        """Return the keys."""
-
-        return self.value.keys()  # type: ignore[no-any-return]
 
     def values(self) -> DictValuesStrAny:
         """Return the values."""
-
         return self.value.values()  # type: ignore[no-any-return]
 
     def items(self) -> DictItemsStrAny:
         """Return the items."""
-
         return self.value.items()  # type: ignore[no-any-return]
 
     def pop(self, key: str, default: Any = None) -> Any:
         """Pop the key."""
-
         return self.value.pop(key, default)
 
     def update(self, other: dict[str, Any], **kwargs: Any) -> None:
         """Update the data."""
-
         self.value.update(other, **kwargs)
 
     def append(self, value: Any) -> None:
         """Append a value."""
-
         self.value.append(value)
 
     def extend(self, values: Iterable[Any]) -> None:
         """Extend the list."""
-
         self.extend(values)
+
+    def __get_item__(self, key: Union[SupportsIndex, slice]) -> Any:
+        return self.value[key]
+
+
+class JSON5RowDict(JSON5RowAttribute):
+    """Dict (row) with comments."""
+
+    def keys(self) -> DictKeysStrAny:
+        """Return the keys."""
+        return self.value.keys()  # type: ignore[no-any-return]
+
+
+class JSON5RowList(JSON5RowAttribute):
+    """List (row) with comments."""
+
+    def __iter__(self) -> Iterator[Any]:
+        """Iterate over the item."""
+        return cast(list[Any], self.value).__iter__()
 
 
 class JSON5Dict(dict[str, Any], JSON5Item):
@@ -829,7 +820,6 @@ class JSON5Dict(dict[str, Any], JSON5Item):
 
     def data(self) -> Any:
         """Return the data, no comments."""
-
         return {key: value.data() for key, value in self.children.items()}
 
     def __getitem__(self, key: str) -> JSON5Item:
@@ -838,7 +828,13 @@ class JSON5Dict(dict[str, Any], JSON5Item):
     def __setitem__(self, key: str, value: Any) -> None:
         attribute: JSON5Item
         if not isinstance(value, JSON5Item):
-            attribute = JSON5RowAttribute()
+            if isinstance(value, dict):
+                attribute = JSON5RowDict()
+            elif isinstance(value, list):
+                attribute = JSON5RowList()
+            else:
+                self.children[key] = value
+                return
             attribute.value = value
         else:
             attribute = value
@@ -846,35 +842,34 @@ class JSON5Dict(dict[str, Any], JSON5Item):
 
     def __delitem__(self, key: str) -> None:
         """Delete the key."""
-
         del self.children[key]
 
     def __contains__(self, key: str) -> bool:  # type: ignore[override]
         """Check if the key is in the data."""
-
         return key in self.children
 
     def __iter__(self) -> Iterator[str]:
         """Iterate over the keys."""
-
         return iter(self.children)
 
     def __len__(self) -> int:
         """Return the number of keys."""
-
         return len(self.children)
 
     def get(self, key: str, default: Any = None) -> Any:
         """Get the value for the key."""
-
         return self.children.get(key, default)
 
     def setdefault(self, key: str, default: Any = None) -> Any:
         """Set the default value for the key."""
-
         attribute: JSON5Item
         if not isinstance(default, JSON5Item):
-            attribute = JSON5RowAttribute()
+            if isinstance(default, dict):
+                attribute = JSON5RowDict()
+            elif isinstance(default, list):
+                attribute = JSON5RowList()
+            else:
+                attribute = JSON5RowAttribute()
             attribute.value = default
         else:
             attribute = default
@@ -882,32 +877,26 @@ class JSON5Dict(dict[str, Any], JSON5Item):
 
     def keys(self) -> DictKeysStrAny:
         """Return the keys."""
-
         return self.children.keys()
 
     def values(self) -> DictValuesStrAny:
         """Return the values."""
-
         return self.children.values()
 
     def items(self) -> DictItemsStrAny:
         """Return the items."""
-
         return self.children.items()
 
     def pop(self, key: str, default: Any = None) -> Any:
         """Pop the key."""
-
         return self.children.pop(key, default)
 
     def popitem(self) -> tuple[str, Any]:
         """Pop an item."""
-
         return self.children.popitem()
 
     def update(self, other: dict[str, Any], **kwargs: Any) -> None:  # type: ignore[override]
         """Update the data."""
-
         self.children.update(other, **kwargs)
 
 
@@ -922,7 +911,6 @@ class JSON5List(list[Any], JSON5Item):
 
     def data(self) -> Any:
         """Return the data, no comments."""
-
         return [value.data() for value in self.children]
 
     def __getitem__(self, key: Union[SupportsIndex, slice]) -> Any:
@@ -931,8 +919,12 @@ class JSON5List(list[Any], JSON5Item):
     def __setitem__(self, key: SupportsIndex, value: Any) -> None:  # type: ignore[override]
         attribute: JSON5Item
         if not isinstance(value, JSON5Item):
-            attribute = JSON5RowAttribute()
-            attribute.value = value
+            if isinstance(value, dict):
+                attribute = JSON5RowDict()
+                attribute.value = value
+            elif isinstance(value, list):
+                attribute = JSON5RowList()
+                attribute.value = value
         else:
             attribute = value
         self.children[key] = attribute
@@ -940,38 +932,36 @@ class JSON5List(list[Any], JSON5Item):
     # Add proxy method of sequence object
     def __delitem__(self, key: Union[SupportsIndex, slice]) -> None:
         """Delete the key."""
-
         del self.children[key]
 
     def __contains__(self, value: Any) -> bool:
         """Check if the key is in the data."""
-
         return value in self.children
 
     def __iter__(self) -> Iterator[Any]:
         """Iterate over the item."""
-
         return self.children.__iter__()
 
     def __len__(self) -> int:
         """Return the number of keys."""
-
         return len(self.children)
 
     def append(self, value: Any) -> None:
         """Append a value."""
-
         attribute: JSON5Item
         if not isinstance(value, JSON5Item):
-            attribute = JSON5RowAttribute()
-            attribute.value = value
+            if isinstance(value, dict):
+                attribute = JSON5RowDict()
+                attribute.value = value
+            elif isinstance(value, list):
+                attribute = JSON5RowList()
+                attribute.value = value
         else:
             attribute = value
         self.children.append(attribute)
 
     def extend(self, values: Iterable[Any]) -> None:
         """Extend the list."""
-
         for value in values:
             self.append(value)
 
@@ -1038,9 +1028,15 @@ class EditJSON5(_EditDict):
                 continue
 
             if lines[0].endswith(","):
-                attribute_simple = JSON5RowAttribute()
+                value = json5.loads(lines[0].strip()[:-1])
+                if isinstance(value, dict):
+                    attribute_simple: JSON5RowAttribute = JSON5RowDict()
+                elif isinstance(value, list):
+                    attribute_simple = JSON5RowList()
+                else:
+                    attribute_simple = JSON5RowAttribute()
                 attribute_simple.comment = comment
-                attribute_simple.value = json5.loads(lines[0].strip()[:-1])
+                attribute_simple.value = value
                 parent.children.append(attribute_simple)
                 lines = lines[1:]
                 continue
@@ -1087,9 +1083,16 @@ class EditJSON5(_EditDict):
                 value = simple_match.group(2)
                 lines = lines[1:]
 
-                attribute_simple = JSON5RowAttribute()
+                value = json5.loads(value)
+                if isinstance(value, dict):
+                    attribute_simple: JSON5RowAttribute = JSON5RowDict()
+                elif isinstance(value, list):
+                    attribute_simple = JSON5RowList()
+                else:
+                    attribute_simple = JSON5RowAttribute()
+
                 attribute_simple.comment = comment
-                attribute_simple.value = json5.loads(value)
+                attribute_simple.value = value
                 parent.children[name] = attribute_simple
                 continue
 
@@ -1157,7 +1160,6 @@ class EditJSON5(_EditDict):
 
     def load(self, content: io.TextIOWrapper) -> Any:
         """Load the content."""
-
         lines = content.read().split("\n")
 
         assert lines[0] == "{"
@@ -1171,14 +1173,22 @@ class EditJSON5(_EditDict):
 
         return root
 
-    def dump(self, data: dict[str, Any]) -> str:
+    def dump(self, data: Union[dict[str, Any], JSON5Dict, JSON5List]) -> str:
         """Dump the data."""
-
-        lines = ["{"]
-        lines.extend(self._dump_dict(cast(JSON5Dict, data), "  "))
-        lines.append("}")
-
-        return "\n".join(lines)
+        if isinstance(data, JSON5Dict):
+            lines = ["{"]
+            lines.extend(self._dump_dict(data, "  "))
+            lines.append("}")
+            return "\n".join(lines)
+        elif isinstance(data, JSON5List):
+            lines = ["["]
+            lines.extend(self._dump_sequence(data, "  "))
+            lines.append("]")
+            return "\n".join(lines)
+        else:
+            result = json5.dumps(data, indent=2)
+            assert isinstance(result, str)
+            return result
 
 
 class EditRenovateConfigV2(EditJSON5):
@@ -1194,7 +1204,6 @@ class EditRenovateConfigV2(EditJSON5):
 
     def add_regex_manager(self, data: dict[str, Any], comment: Optional[list[str]] = None) -> None:
         """Add a regex manager to the Renovate config."""
-
         attribute = JSON5Dict()
         if comment:
             attribute.comment = comment
@@ -1202,20 +1211,48 @@ class EditRenovateConfigV2(EditJSON5):
             attribute[key] = value
 
         if "regexManagers" in self.data:
-            for index, regex_managers in enumerate(self.data["regexManagers"]):
-                if regex_managers.comment == comment:
+            for index, regex_manager in enumerate(self.data["regexManagers"]):
+                if regex_manager.comment == comment:
                     self.data["regexManagers"][index] = attribute
                     return
 
-            for index, regex_managers in enumerate(self.data["regexManagers"]):
-                if isinstance(regex_managers, JSON5Dict):
-                    if data["fileMatch"] == regex_managers["fileMatch"].data():
+            for index, regex_manager in enumerate(self.data["regexManagers"]):
+                if isinstance(regex_manager, JSON5Dict):
+                    if data["fileMatch"] == regex_manager["fileMatch"].data():
                         self.data["regexManagers"][index] = attribute
                         return
         else:
             self.data["regexManagers"] = JSON5List()
 
         self.data["regexManagers"].append(attribute)
+
+    def remove_regex_manager(self, data: dict[str, Any], comment: Optional[list[str]] = None) -> None:
+        """Remove a regex manager to the Renovate config."""
+        if "regexManagers" not in self.data:
+            return
+
+        found = False
+        found_index = -1
+        for index, regex_manager in enumerate(self.data["regexManagers"]):
+            if comment is not None and regex_manager.comment == comment:
+                found = True
+                found_index = index
+                break
+
+            if data and isinstance(regex_manager, JSON5Dict):
+                success = True
+                for key, value in data.items():
+                    if key not in regex_manager or regex_manager[key].data() != value:
+                        success = False
+                        break
+
+                if success:
+                    found = True
+                    found_index = index
+                    break
+
+        if found:
+            del self.data["regexManagers"][found_index]
 
     def add_package_rule(
         self,
@@ -1224,7 +1261,6 @@ class EditRenovateConfigV2(EditJSON5):
         checks_keys: Optional[list[str]] = None,
     ) -> None:
         """Add a package rule to the Renovate config."""
-
         attribute = JSON5Dict()
         if comment:
             attribute.comment = comment
@@ -1232,38 +1268,43 @@ class EditRenovateConfigV2(EditJSON5):
             attribute[key] = value
 
         if "packageRules" in self.data:
-            for index, package_rules in enumerate(self.data["packageRules"]):
-                if package_rules.comment == comment:
+            for index, package_rule in enumerate(self.data["packageRules"]):
+                if package_rule.comment == comment:
                     self.data["packageRules"][index] = attribute
                     return
 
             if checks_keys is not None:
-                for index, package_rules in enumerate(self.data["packageRules"]):
-                    if not isinstance(package_rules, JSON5Dict):
+                for index, package_rule in enumerate(self.data["packageRules"]):
+                    if not isinstance(package_rule, JSON5Dict):
                         continue
                     found = True
                     for key in checks_keys:
                         assert key in data
-                        if key not in package_rules:
+                        if key not in package_rule:
                             found = False
                             break
-                        if package_rules[key].data() != data[key]:
+                        if package_rule[key].data() != data[key]:
                             found = False
                             break
                     if found:
                         self.data["packageRules"][index] = attribute
                         return
 
-            for index, package_rules in enumerate(self.data["packageRules"]):
+            for index, package_rule in enumerate(self.data["packageRules"]):
                 success = True
-                if not isinstance(package_rules, JSON5Dict):
+                if not isinstance(package_rule, JSON5Dict):
                     success = False
-                elif package_rules.keys() != data.keys():
+                elif package_rule.keys() != data.keys():
                     success = False
                 else:
                     for key, value in data.items():
-                        if package_rules[key].data() != value:
-                            success = False
+                        value2 = package_rule[key]
+                        if isinstance(value2, JSON5Item):
+                            if value2.data() != value:
+                                success = False
+                        else:
+                            if value2 != value:
+                                success = False
 
                 if success:
                     self.data["packageRules"][index] = attribute
@@ -1272,3 +1313,34 @@ class EditRenovateConfigV2(EditJSON5):
             self.data["packageRules"] = JSON5List()
 
         self.data["packageRules"].append(attribute)
+
+    def remove_package_rule(self, data: dict[str, Any], comment: Optional[list[str]] = None) -> None:
+        """Remove a package rule to the Renovate config."""
+        if "packageRules" not in self.data:
+            return
+
+        found = False
+        found_index = -1
+        for index, package_rule in enumerate(self.data["packageRules"]):
+            if comment is not None and package_rule.comment == comment:
+                found = True
+                found_index = index
+                break
+
+            if data and isinstance(package_rule, JSON5Dict):
+                success = True
+                for key, value in data.items():
+                    current_value = package_rule.get(key)
+                    if isinstance(current_value, JSON5Dict):
+                        current_value = value.data()
+                    if current_value != value:
+                        success = False
+                        break
+
+                if success:
+                    found = True
+                    found_index = index
+                    break
+
+        if found:
+            del self.data["packageRules"][found_index]

@@ -41,13 +41,11 @@ _BROWSER = "xdg-open"
 
 def get_browser() -> str:
     """Get the used browser."""
-
     return _BROWSER
 
 
 def set_browser(browser: str) -> None:
     """Set the used browser."""
-
     global _BROWSER  # pylint: disable=global-statement
     _BROWSER = browser
 
@@ -57,13 +55,11 @@ _EDITOR = "xdg-open"
 
 def get_editor() -> str:
     """Get the used editor."""
-
     return _EDITOR
 
 
 def set_editor(editor: str) -> None:
     """Set the used editor."""
-
     global _EDITOR  # pylint: disable=global-statement
     _EDITOR = editor
 
@@ -85,14 +81,12 @@ _REPO_CONFIG: Union[Repo, dict[str, None]] = {}
 
 def set_repo_config(repo_config: Repo) -> None:
     """Set the repository configuration."""
-
     global _REPO_CONFIG  # pylint: disable=global-statement
     _REPO_CONFIG = repo_config
 
 
 def get_repo_config() -> Repo:
     """Get the repository configuration."""
-
     repo = cast(Repo, _REPO_CONFIG)
 
     if not repo:
@@ -171,7 +165,6 @@ def edit(files: list[str]) -> None:
 
 def gh(command: str, *args: str) -> str:  # pylint: disable=invalid-name
     """Run a GitHub command."""
-
     return run(
         ["gh", command, f"--repo={get_repo_config()['name']}", *args], stdout=subprocess.PIPE
     ).stdout.strip()
@@ -179,5 +172,4 @@ def gh(command: str, *args: str) -> str:  # pylint: disable=invalid-name
 
 def gh_json(command: str, fields: list[str], *args: str) -> list[dict[str, str]]:
     """Get the JSON from a GitHub command."""
-
     return cast(list[dict[str, str]], json.loads(gh(command, f"--json={','.join(fields)}", *args)))
