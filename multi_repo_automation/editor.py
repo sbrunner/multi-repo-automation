@@ -79,6 +79,11 @@ class _Edit:
         """Load the file."""
         return self
 
+    def is_modified(self) -> bool:
+        """Check if the file has been modified."""
+        new_data = self.dump(self.data) if self.data else ""
+        return new_data != self.original_data
+
     def __exit__(
         self,
         exc_type: Optional[type[BaseException]],
@@ -448,12 +453,12 @@ class EditPreCommitConfig(EditYAML):
         super().__init__(filename, **kwargs)
 
         self.repos_hooks: dict[str, _RepoHook] = {}
-        for repo in self["repos"]:
+        for repo in self.setdefault("repos", {}):
             self.repos_hooks.setdefault(
                 repo["repo"], {"repo": repo, "hooks": {hook["id"]: hook for hook in repo["hooks"]}}
             )
         for repo in self["repos"]:
-            for hook in repo["hooks"]:
+            for hook in repo.setdefault("hooks", []):
                 for tag in ("files", "excludes"):
                     if tag in hook and hook[tag].strip().startswith("(?x)"):
                         hook[tag] = ruamel.yaml.scalarstring.LiteralScalarString(hook[tag].strip())
@@ -759,10 +764,6 @@ class JSON5RowAttribute(JSON5Item):
     def setdefault(self, key: str, default: Any = None) -> Any:
         """Set the default value for the key."""
         return self.value.setdefault(key, default)
-
-    def keys(self) -> DictKeysStrAny:
-        """Return the keys."""
-        return self.value.keys()  # type: ignore[no-any-return]
 
     def values(self) -> DictValuesStrAny:
         """Return the values."""
