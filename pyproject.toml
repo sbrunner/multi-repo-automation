@@ -41,7 +41,7 @@ identify = "2.5.31"
 c2cciutils = "1.6.11"
 tomlkit = "0.12.1"
 json5 = "0.9.14"
-configupdater = "3.1.1"
+configupdater = "3.2"
 typing_extensions = "4.8.0"
 
 
