@@ -86,13 +86,13 @@ virtualenv = ["virtualenv (>=20.0.35)"]
 
 [[package]]
 name = "c2cciutils"
-version = "1.6.11"
+version = "1.6.12"
 description = "Common utilities for Camptocamp CI"
 optional = false
 python-versions = ">=3.9,<4.0"
 files = [
-    {file = "c2cciutils-1.6.11-py3-none-any.whl", hash = "sha256:6b8f6548ccf7238037993d2924ca2c5a7f1143e38dfb2c1ce5f374108e70cae1"},
-    {file = "c2cciutils-1.6.11.tar.gz", hash = "sha256:372af07e94e48e0d006632de3ef9e912a45988a96f4ca3b89f51ce6956a76ccd"},
+    {file = "c2cciutils-1.6.12-py3-none-any.whl", hash = "sha256:9a0fe076e3f3c9575ec1a9d9fe104dccea244073eb249134f677b8da0bdc2dee"},
+    {file = "c2cciutils-1.6.12.tar.gz", hash = "sha256:cc3758abf29f4fa278c3143cdceca5a6c0de3b1321b1d9f0da7274cc2a98ecad"},
 ]
 
 [package.dependencies]
@@ -109,7 +109,7 @@ toml = ">=0.0.0,<1.0.0"
 urllib3 = ">=2.0.0,<3.0.0"
 
 [package.extras]
-pr-checks = ["codespell (==2.2.5)"]
+pr-checks = ["codespell (==2.2.6)"]
 publish = ["google-api-python-client (>=2.0.0,<3.0.0)", "google-auth-httplib2 (>=0.0.0,<1.0.0)", "google-auth-oauthlib (>=1.0.0,<2.0.0)", "tomlkit (>=0.0.0,<1.0.0)", "twine (>=4.0.0,<5.0.0)"]
 version = ["multi-repo-automation (>=0.0.0,<1.0.0)"]
 
@@ -497,13 +497,13 @@ test = ["black", "coverage[toml]", "ddt (>=1.1.1,!=1.4.3)", "mock", "mypy", "pre
 
 [[package]]
 name = "identify"
-version = "2.5.31"
+version = "2.5.32"
 description = "File identification library for Python"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "identify-2.5.31-py2.py3-none-any.whl", hash = "sha256:90199cb9e7bd3c5407a9b7e81b4abec4bb9d249991c79439ec8af740afc6293d"},
-    {file = "identify-2.5.31.tar.gz", hash = "sha256:7736b3c7a28233637e3c36550646fc6389bedd74ae84cb788200cc8e2dd60b75"},
+    {file = "identify-2.5.32-py2.py3-none-any.whl", hash = "sha256:0b7656ef6cba81664b783352c73f8c24b39cf82f926f78f4550eda928e5e0545"},
+    {file = "identify-2.5.32.tar.gz", hash = "sha256:5d9979348ec1a21c768ae07e0a652924538e8bce67313a73cb0f681cf08ba407"},
 ]
 
 [package.extras]
@@ -1358,13 +1358,13 @@ files = [
 
 [[package]]
 name = "tomlkit"
-version = "0.12.1"
+version = "0.12.3"
 description = "Style preserving TOML library"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "tomlkit-0.12.1-py3-none-any.whl", hash = "sha256:712cbd236609acc6a3e2e97253dfc52d4c2082982a88f61b640ecf0817eab899"},
-    {file = "tomlkit-0.12.1.tar.gz", hash = "sha256:38e1ff8edb991273ec9f6181244a6a391ac30e9f5098e7535640ea6be97a7c86"},
+    {file = "tomlkit-0.12.3-py3-none-any.whl", hash = "sha256:b0a645a9156dc7cb5d3a1f0d4bab66db287fcb8e0430bdd4664a095ea16414ba"},
+    {file = "tomlkit-0.12.3.tar.gz", hash = "sha256:75baf5012d06501f07bee5bf8e801b9f343e7aac5a92581f20f80ce632e6b5a4"},
 ]
 
 [[package]]
@@ -1527,4 +1527,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<4.0"
-content-hash = "84cf88e1e8a54f30de6f7d85f372a36cdd49310c63abcd3813ca8ae7f4e9a6eb"
+content-hash = "3108fc0ac5a511bd09d20a5674aed10ca71a7c12217a930171fb572d201a1125"
