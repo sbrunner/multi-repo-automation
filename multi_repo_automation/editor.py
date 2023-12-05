@@ -118,6 +118,10 @@ class _Edit:
                         )
                     )
                 else:
+                    # Create directory if he didn't exists
+                    dirname = os.path.dirname(self.filename)
+                    if dirname and not os.path.exists(dirname):
+                        os.makedirs(dirname)
                     with open(self.filename, "w", encoding="utf-8") as file_:
                         file_.write(new_data)
                     if os.path.exists(".pre-commit-config.yaml") and self.run_pre_commit:
@@ -453,7 +457,7 @@ class EditPreCommitConfig(EditYAML):
         super().__init__(filename, **kwargs)
 
         self.repos_hooks: dict[str, _RepoHook] = {}
-        for repo in self.setdefault("repos", {}):
+        for repo in self.setdefault("repos", []):
             self.repos_hooks.setdefault(
                 repo["repo"], {"repo": repo, "hooks": {hook["id"]: hook for hook in repo["hooks"]}}
             )
