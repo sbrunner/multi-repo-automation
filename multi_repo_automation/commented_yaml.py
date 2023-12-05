@@ -3,7 +3,7 @@
 import argparse
 import sys
 from io import StringIO
-from typing import Any, Union, cast
+from typing import Any, Union
 
 import ruamel.yaml
 
@@ -13,7 +13,7 @@ def commented_sec(value: list[Union[tuple[Any], tuple[Any, str]]]) -> ruamel.yam
     result = ruamel.yaml.comments.CommentedSeq([v[0] for v in value])
     for key, val in enumerate(value):
         if len(val) == 2:
-            _, comment = cast(tuple[Any, str], val)
+            _, comment = val
             result.yaml_add_eol_comment(comment, key)
             result.ca.items[key][0].value = comment
     return result
@@ -27,8 +27,8 @@ def commented_map(
     for key, val in value.items():
         if len(val) != 1:
             if len(val) == 2:
-                val = (val[0], val[1], 0)  # type: ignore[misc]
-            _, comment, index = cast(tuple[Any, str, int], val)
+                val = (val[0], val[1], 0)
+            _, comment, index = val
             result.yaml_add_eol_comment(comment, key)
             result.ca.items[key][2].value = comment
             if index == 3:
