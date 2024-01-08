@@ -42,15 +42,15 @@ c2cciutils = "1.6.13"
 tomlkit = "0.12.3"
 json5 = "0.9.14"
 configupdater = "3.2"
-typing_extensions = "4.8.0"
+typing_extensions = "4.9.0"
 
 
 [tool.poetry.group.dev.dependencies]
 prospector = { extras = ["with_bandit", "with_mypy", "with_pyroma"], version = "1.10.3" }
 types-PyYAML = "6.0.12.12"
 types-requests = "2.31.0.20231231"
-prospector-profile-duplicated = "0.4.0"
-prospector-profile-utils = "1.5.0"
+prospector-profile-duplicated = "0.5.1"
+prospector-profile-utils = "1.6.0"
 
 [tool.poetry.scripts]
 mra-yaml = "multi_repo_automation.commented_yaml:main"
