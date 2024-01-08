@@ -841,24 +841,24 @@ with-vulture = ["vulture (>=1.5)"]
 
 [[package]]
 name = "prospector-profile-duplicated"
-version = "0.4.0"
+version = "0.5.1"
 description = "Profile that can be used to disable the duplicated or conflict rules between Prospector and other tools"
 optional = false
 python-versions = "*"
 files = [
-    {file = "prospector_profile_duplicated-0.4.0-py2.py3-none-any.whl", hash = "sha256:f648c2e81d3e4592143b678378278df6d309ae9e20bf9595b5777ee8bcdaf85d"},
-    {file = "prospector_profile_duplicated-0.4.0.tar.gz", hash = "sha256:862e332c9413aca07c2b747abf9275531cebdf82a0db887e99b63b2f424301da"},
+    {file = "prospector_profile_duplicated-0.5.1-py2.py3-none-any.whl", hash = "sha256:6770c95f26b309e6abe95b7beaf3790aed3a5181861f55a7295aa764bc20f33e"},
+    {file = "prospector_profile_duplicated-0.5.1.tar.gz", hash = "sha256:0ccb14969212c932c8dc2bcc4a37bef8d3828147ea58a72ddfadbbb1c63eddc1"},
 ]
 
 [[package]]
 name = "prospector-profile-utils"
-version = "1.5.0"
+version = "1.6.0"
 description = "Some utility Prospector profiles."
 optional = false
 python-versions = "*"
 files = [
-    {file = "prospector_profile_utils-1.5.0-py2.py3-none-any.whl", hash = "sha256:356a7f30a010fbd380a1aa6ad132c6534c956ee046e562ccbfbfdd88902089ab"},
-    {file = "prospector_profile_utils-1.5.0.tar.gz", hash = "sha256:10318a0fb0f01d24d8e635268b555841f086f8a04f9d7bb08685bc15093bf451"},
+    {file = "prospector_profile_utils-1.6.0-py2.py3-none-any.whl", hash = "sha256:9d3e8b6d63652e94d63d4973964515c91261c1ecddcf442bbd55ae2363500374"},
+    {file = "prospector_profile_utils-1.6.0.tar.gz", hash = "sha256:0cd97c313c145a3bd18c1cb7ea640b3d6de521ed512156fedd8ff1f0f3c34510"},
 ]
 
 [[package]]
@@ -1404,13 +1404,13 @@ urllib3 = ">=2"
 
 [[package]]
 name = "typing-extensions"
-version = "4.8.0"
+version = "4.9.0"
 description = "Backported and Experimental Type Hints for Python 3.8+"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "typing_extensions-4.8.0-py3-none-any.whl", hash = "sha256:8f92fc8806f9a6b641eaa5318da32b44d401efaac0f6678c9bc448ba3605faa0"},
-    {file = "typing_extensions-4.8.0.tar.gz", hash = "sha256:df8e4339e9cb77357558cbdbceca33c303714cf861d1eef15e1070055ae8b7ef"},
+    {file = "typing_extensions-4.9.0-py3-none-any.whl", hash = "sha256:af72aea155e91adfc61c3ae9e0e342dbc0cba726d6cba4b6c72c1f34e47291cd"},
+    {file = "typing_extensions-4.9.0.tar.gz", hash = "sha256:23478f88c37f27d76ac8aee6c905017a143b0b1b886c3c9f66bc2fd94f9f5783"},
 ]
 
 [[package]]
@@ -1526,4 +1526,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<4.0"
-content-hash = "ec80e39b5a5cf08b8d1a15d99102af5853f626748ff3c3059ecd08bd8f6a5b47"
+content-hash = "f452c6f5826756c628b8d8cd376efd2b4aca189ed6c7cea0a6f4022c19d5a1af"
