@@ -1206,34 +1206,10 @@ class EditRenovateConfigV2(EditJSON5):
     def __init__(self, filename: str = ".github/renovate.json5", **kwargs: Any):
         super().__init__(filename, **kwargs)
 
-    def add_regex_manager(self, data: dict[str, Any], comment: Optional[list[str]] = None) -> None:
-        """Add a regex manager to the Renovate config."""
-        attribute = JSON5Dict()
-        if comment:
-            attribute.comment = comment
-        for key, value in data.items():
-            attribute[key] = value
-
-        if "regexManagers" in self.data:
-            for index, regex_manager in enumerate(self.data["regexManagers"]):
-                if regex_manager.comment == comment:
-                    self.data["regexManagers"][index] = attribute
-                    return
-
-            for index, regex_manager in enumerate(self.data["regexManagers"]):
-                if isinstance(regex_manager, JSON5Dict):
-                    if data["fileMatch"] == regex_manager["fileMatch"].data():
-                        self.data["regexManagers"][index] = attribute
-                        return
-        else:
-            self.data["regexManagers"] = JSON5List()
-
-        self.data["regexManagers"].append(attribute)
-
-    def remove_regex_manager(self, data: dict[str, Any], comment: Optional[list[str]] = None) -> None:
+    def regex_manager_index(self, data: dict[str, Any], comment: Optional[list[str]] = None) -> Optional[int]:
         """Remove a regex manager to the Renovate config."""
         if "regexManagers" not in self.data:
-            return
+            return None
 
         found = False
         found_index = -1
@@ -1255,27 +1231,44 @@ class EditRenovateConfigV2(EditJSON5):
                     found_index = index
                     break
 
-        if found:
-            del self.data["regexManagers"][found_index]
+        return found_index if found else None
 
-    def add_package_rule(
-        self,
-        data: dict[str, Any],
-        comment: Optional[list[str]] = None,
-        checks_keys: Optional[list[str]] = None,
-    ) -> None:
-        """Add a package rule to the Renovate config."""
+    def add_regex_manager(self, data: dict[str, Any], comment: Optional[list[str]] = None) -> None:
+        """Add a regex manager to the Renovate config."""
         attribute = JSON5Dict()
         if comment:
             attribute.comment = comment
         for key, value in data.items():
             attribute[key] = value
 
+        index = self.regex_manager_index(data, comment)
+
+        if index is not None:
+            self.data["regexManagers"][index] = attribute
+        else:
+            self.data["regexManagers"].append(attribute)
+
+    def remove_regex_manager(self, data: dict[str, Any], comment: Optional[list[str]] = None) -> None:
+        """Remove a regex manager to the Renovate config."""
+        index = self.regex_manager_index(data, comment)
+
+        if "regexManagers" not in self.data:
+            self.data["regexManagers"] = JSON5List()
+
+        if index is not None:
+            del self.data["regexManagers"][index]
+
+    def package_rule_index(
+        self,
+        data: dict[str, Any],
+        comment: Optional[list[str]] = None,
+        checks_keys: Optional[list[str]] = None,
+    ) -> Optional[int]:
+        """Get the package rule index in the Renovate config."""
         if "packageRules" in self.data:
             for index, package_rule in enumerate(self.data["packageRules"]):
                 if package_rule.comment == comment:
-                    self.data["packageRules"][index] = attribute
-                    return
+                    return index
 
             if checks_keys is not None:
                 for index, package_rule in enumerate(self.data["packageRules"]):
@@ -1291,8 +1284,7 @@ class EditRenovateConfigV2(EditJSON5):
                             found = False
                             break
                     if found:
-                        self.data["packageRules"][index] = attribute
-                        return
+                        return index
 
             for index, package_rule in enumerate(self.data["packageRules"]):
                 success = True
@@ -1311,40 +1303,41 @@ class EditRenovateConfigV2(EditJSON5):
                                 success = False
 
                 if success:
-                    self.data["packageRules"][index] = attribute
-                    return
-        else:
+                    return index
+
+        return None
+
+    def add_package_rule(
+        self,
+        data: dict[str, Any],
+        comment: Optional[list[str]] = None,
+        checks_keys: Optional[list[str]] = None,
+    ) -> None:
+        """Add a package rule to the Renovate config."""
+        attribute = JSON5Dict()
+        if comment:
+            attribute.comment = comment
+        for key, value in data.items():
+            attribute[key] = value
+
+        index = self.package_rule_index(data, comment, checks_keys)
+
+        if index is not None:
+            self.data["packageRules"][index] = attribute
+            return
+
+        if "packageRules" not in self.data:
             self.data["packageRules"] = JSON5List()
 
         self.data["packageRules"].append(attribute)
 
-    def remove_package_rule(self, data: dict[str, Any], comment: Optional[list[str]] = None) -> None:
-        """Remove a package rule to the Renovate config."""
-        if "packageRules" not in self.data:
-            return
-
-        found = False
-        found_index = -1
-        for index, package_rule in enumerate(self.data["packageRules"]):
-            if comment is not None and package_rule.comment == comment:
-                found = True
-                found_index = index
-                break
-
-            if data and isinstance(package_rule, JSON5Dict):
-                success = True
-                for key, value in data.items():
-                    current_value = package_rule.get(key)
-                    if isinstance(current_value, JSON5Dict):
-                        current_value = value.data()
-                    if current_value != value:
-                        success = False
-                        break
-
-                if success:
-                    found = True
-                    found_index = index
-                    break
-
-        if found:
-            del self.data["packageRules"][found_index]
+    def remove_package_rule(
+        self,
+        data: dict[str, Any],
+        comment: Optional[list[str]] = None,
+        checks_keys: Optional[list[str]] = None,
+    ) -> None:
+        """Remove a package rule."""
+        index = self.package_rule_index(data, comment, checks_keys)
+        if index is not None:
+            del self.data["packageRules"][index]
