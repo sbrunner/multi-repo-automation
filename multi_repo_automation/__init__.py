@@ -208,7 +208,9 @@ class CreateBranch:
             )
             self.has_stashed = proc.stdout.strip() != "No local changes to save"
         else:
-            proc = run(["git", "stash"], stdout=subprocess.PIPE, encoding="utf-8", env={})
+            proc = run(
+                ["git", "stash"], auto_fix_owner=True, stdout=subprocess.PIPE, encoding="utf-8", env={}
+            )
             self.has_stashed = proc.stdout.strip() != "No local changes to save"
         run(["git", "fetch", repo])
         if self.new_branch_name == self.old_branch_name:
