@@ -494,11 +494,14 @@ def replace(filename: str, search_text: str, replace_text: str) -> None:
 
 def get_security(repo: Repo) -> Optional[c2cciutils.security.Security]:
     """Get the security file, parsed."""
-    security_response = requests.get(
-        f"https://raw.githubusercontent.com/{repo['name']}/{repo.get('master_branch', 'master')}/SECURITY.md",
-        headers=c2cciutils.add_authorization_header({}),
-        timeout=30,
+    security_url = (
+        f"https://raw.githubusercontent.com/{repo['name']}/{repo.get('master_branch', 'master')}/SECURITY.md"
     )
+    security_response = requests.get(security_url, timeout=30)
+    if not security_response.ok:
+        security_response = requests.get(
+            security_url, headers=c2cciutils.add_authorization_header({}), timeout=30
+        )
     if security_response.ok:
         return c2cciutils.security.Security(security_response.text)
     return None
