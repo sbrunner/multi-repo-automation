@@ -711,9 +711,9 @@ class App:
                                     self.kwargs["base_branch"] = base_branch
                                     if self.do_pr_on_stabilization_branches:
                                         assert self.branch_prefix is not None
-                                        self.kwargs[
-                                            "new_branch_name"
-                                        ] = f"{self.branch_prefix.rstrip('-')}-{base_branch}"
+                                        self.kwargs["new_branch_name"] = (
+                                            f"{self.branch_prefix.rstrip('-')}-{base_branch}"
+                                        )
                                     create_branch = CreateBranch(repo, **self.kwargs)
                                     with create_branch:
                                         self.action()
