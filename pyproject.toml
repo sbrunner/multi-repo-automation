@@ -38,12 +38,14 @@ PyYAML = "6.0.1"
 requests = "2.31.0"
 "ruamel.yaml" = "0.18.5"
 identify = "2.5.33"
-c2cciutils = "1.6.15"
+c2cciutils = { version = "1.6.15", optional = true }
 tomlkit = "0.12.3"
 json5 = "0.9.14"
 configupdater = "3.2"
 typing_extensions = "4.9.0"
 
+[tool.poetry.extras]
+update_stabilization_branches = ["c2cciutils"]
 
 [tool.poetry.group.dev.dependencies]
 prospector = { extras = ["with_bandit", "with_mypy", "with_pyroma"], version = "1.10.3" }
