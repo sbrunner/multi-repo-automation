@@ -61,7 +61,7 @@ repos:
           - --ignore-words=.github/spell-ignore-words.txt
         exclude: ^poetry.lock$
   - repo: https://github.com/asottile/pyupgrade
-    rev: v3.15.1
+    rev: v3.15.2
     hooks:
       - id: pyupgrade
         args:
