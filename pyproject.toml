@@ -51,7 +51,7 @@ update_stabilization_branches = ["c2cciutils"]
 prospector = { extras = ["with_bandit", "with_mypy", "with_pyroma"], version = "1.10.3" }
 types-PyYAML = "6.0.12.20240311"
 types-requests = "2.31.0.20240311"
-prospector-profile-duplicated = "0.5.1"
+prospector-profile-duplicated = "1.2.0"
 prospector-profile-utils = "1.6.0"
 
 [tool.poetry.scripts]
