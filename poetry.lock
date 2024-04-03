@@ -862,13 +862,13 @@ files = [
 
 [[package]]
 name = "prospector-profile-utils"
-version = "1.6.0"
+version = "1.7.2"
 description = "Some utility Prospector profiles."
 optional = false
 python-versions = "*"
 files = [
-    {file = "prospector_profile_utils-1.6.0-py2.py3-none-any.whl", hash = "sha256:9d3e8b6d63652e94d63d4973964515c91261c1ecddcf442bbd55ae2363500374"},
-    {file = "prospector_profile_utils-1.6.0.tar.gz", hash = "sha256:0cd97c313c145a3bd18c1cb7ea640b3d6de521ed512156fedd8ff1f0f3c34510"},
+    {file = "prospector_profile_utils-1.7.2-py2.py3-none-any.whl", hash = "sha256:b22f391258c8baff67a56c93fccabd0a62a637572330ca6b520586065cd7912d"},
+    {file = "prospector_profile_utils-1.7.2.tar.gz", hash = "sha256:200f955d4c506e1ed2b111d986062ef54c01879889809b505aaebdb17dfe3622"},
 ]
 
 [[package]]
@@ -1415,13 +1415,13 @@ urllib3 = ">=2"
 
 [[package]]
 name = "typing-extensions"
-version = "4.9.0"
+version = "4.10.0"
 description = "Backported and Experimental Type Hints for Python 3.8+"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "typing_extensions-4.9.0-py3-none-any.whl", hash = "sha256:af72aea155e91adfc61c3ae9e0e342dbc0cba726d6cba4b6c72c1f34e47291cd"},
-    {file = "typing_extensions-4.9.0.tar.gz", hash = "sha256:23478f88c37f27d76ac8aee6c905017a143b0b1b886c3c9f66bc2fd94f9f5783"},
+    {file = "typing_extensions-4.10.0-py3-none-any.whl", hash = "sha256:69b1a937c3a517342112fb4c6df7e72fc39a38e7891a5730ed4985b5214b5475"},
+    {file = "typing_extensions-4.10.0.tar.gz", hash = "sha256:b0abd7c89e8fb96f98db18d86106ff1d90ab692004eb746cf6eda2682f91b3cb"},
 ]
 
 [[package]]
@@ -1541,4 +1541,4 @@ update-stabilization-branches = ["c2cciutils"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<4.0"
-content-hash = "c24555b8754c59677eacf928b0b0d192b29cfa88e1c02f4c31ce8744e7ad0930"
+content-hash = "983511c8ff6c0bd6be54889e2fb07d157e12a1b2e4650cc7a244890fe6a1adc8"

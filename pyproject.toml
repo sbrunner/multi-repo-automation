@@ -42,7 +42,7 @@ c2cciutils = { version = "1.6.18", optional = true }
 tomlkit = "0.12.4"
 json5 = "0.9.24"
 configupdater = "3.2"
-typing_extensions = "4.9.0"
+typing_extensions = "4.10.0"
 
 [tool.poetry.extras]
 update_stabilization_branches = ["c2cciutils"]
@@ -52,7 +52,7 @@ prospector = { extras = ["with_bandit", "with_mypy", "with_pyroma"], version = "
 types-PyYAML = "6.0.12.20240311"
 types-requests = "2.31.0.20240311"
 prospector-profile-duplicated = "1.2.0"
-prospector-profile-utils = "1.6.0"
+prospector-profile-utils = "1.7.2"
 
 [tool.poetry.scripts]
 mra-yaml = "multi_repo_automation.commented_yaml:main"
