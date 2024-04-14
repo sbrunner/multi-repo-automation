@@ -43,6 +43,7 @@ tomlkit = "0.12.4"
 json5 = "0.9.24"
 configupdater = "3.2"
 typing_extensions = "4.10.0"
+idna = "3.7"
 
 [tool.poetry.extras]
 update_stabilization_branches = ["c2cciutils"]
