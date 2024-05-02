@@ -1246,7 +1246,7 @@ class EditRenovateConfigV2(EditJSON5):
         if index is not None:
             self.data["regexManagers"][index] = attribute
         else:
-            self.data["regexManagers"].append(attribute)
+            self.data.setdefault("regexManagers", []).append(attribute)
 
     def remove_regex_manager(self, data: dict[str, Any], comment: Optional[list[str]] = None) -> None:
         """Remove a regex manager to the Renovate config."""
