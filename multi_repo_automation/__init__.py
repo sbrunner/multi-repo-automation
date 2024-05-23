@@ -532,13 +532,27 @@ def get_stabilization_versions_support(repo: Repo) -> list[VersionSupport]:
     if security is not None:
         if "Version" not in security.headers:
             return versions
+
+        alternate_tags = []
+        if "Alternate Tag" in security.headers:
+            alternate_tag_index = security.headers.index("Alternate Tag")
+            for data in security.data:
+                current_alternate_tags = data[alternate_tag_index].split(", ")
+                current_alternate_tags = [tag.strip() for tag in current_alternate_tags]
+                alternate_tags.extend(current_alternate_tags)
+
         version_index = security.headers.index("Version")
         support_index = security.headers.index("Supported Until")
         for data in security.data:
-            if data[support_index] != "Unsupported" and data[version_index] != get_default_branch():
+            version = data[version_index]
+            if (
+                data[support_index] != "Unsupported"
+                and version != get_default_branch()
+                and version not in alternate_tags
+            ):
                 versions.append(
                     {
-                        "version": data[version_index],
+                        "version": version,
                         "supported_until": data[support_index],
                     }
                 )
