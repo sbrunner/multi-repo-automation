@@ -972,7 +972,7 @@ class JSON5List(list[Any], JSON5Item):
 
 _DICT_START_RE = re.compile(r"^ +?'?([a-zA-Z0-9-]+)'?: {$")
 _SEQ_START_RE = re.compile(r"^ +?'?([a-zA-Z0-9-]+)'?: \[$")
-_COMMENT_RE = re.compile(r"^ *?/\*\* ([^\*]*) \*/$")
+_COMMENT_RE = re.compile(r"^ *?/\*\*? (.*) \*/$")
 _SIMPLE_RE = re.compile(r"^ +?'?([a-zA-Z0-9-]+)'?: (.*),$")
 
 
@@ -984,7 +984,7 @@ class EditJSON5(_EditDict):
         comment_match = _COMMENT_RE.match(lines[0])
         if comment_match:
             return [comment_match.group(1)], lines[1:]
-        if lines[0].endswith("/**"):
+        if lines[0].endswith("/**") or lines[0].endswith("/*"):
             lines = lines[1:]
             comment = [""]
             while True:
