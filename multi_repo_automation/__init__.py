@@ -611,7 +611,7 @@ def get_stabilization_branches_support(repo: Repo) -> list[BranchSupport]:
         remote_branches = ["/".join(b.split("/")[1:]) for b in remote_branches]
 
     config = c2cciutils.get_config()
-    branch_re = c2cciutils.compile_re(config["version"].get("branch_to_version_re", []))
+    branch_re = c2cciutils.compile_re(config.get("version", {}).get("branch_to_version_re", []))
     branches_match = [c2cciutils.match(b, branch_re) for b in remote_branches]
     version_branch = {m.groups()[0] if m.groups() else b: b for m, c, b in branches_match if m is not None}
 
