@@ -45,6 +45,7 @@ configupdater = "3.2"
 typing_extensions = "4.12.1"
 idna = "3.7"
 cryptography = "42.0.8"
+urllib3 = "2.2.2"
 
 [tool.poetry.extras]
 update_stabilization_branches = ["c2cciutils"]
