@@ -89,13 +89,13 @@ virtualenv = ["virtualenv (>=20.0.35)"]
 
 [[package]]
 name = "c2cciutils"
-version = "1.6.19"
+version = "1.6.21"
 description = "Common utilities for Camptocamp CI"
 optional = true
 python-versions = "<4.0,>=3.9"
 files = [
-    {file = "c2cciutils-1.6.19-py3-none-any.whl", hash = "sha256:564b9b7c9bdc634627f2b747b345e627952d3aa80bb4f81c563ed3676123239a"},
-    {file = "c2cciutils-1.6.19.tar.gz", hash = "sha256:051a5dba9212b4fba80df4dcb083889fb99e2b13de2bbb3c55140db8ed5be3b6"},
+    {file = "c2cciutils-1.6.21-py3-none-any.whl", hash = "sha256:69ad85294ce958fefd4ab036c874a0aa025bca947300c78a3801883767770766"},
+    {file = "c2cciutils-1.6.21.tar.gz", hash = "sha256:7adfb854e57a9c445c14cb0b649c97ecbdff20b5a15db48cc50920974f13b594"},
 ]
 
 [package.dependencies]
@@ -1398,13 +1398,13 @@ files = [
 
 [[package]]
 name = "types-requests"
-version = "2.32.0.20240523"
+version = "2.32.0.20240622"
 description = "Typing stubs for requests"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "types-requests-2.32.0.20240523.tar.gz", hash = "sha256:26b8a6de32d9f561192b9942b41c0ab2d8010df5677ca8aa146289d11d505f57"},
-    {file = "types_requests-2.32.0.20240523-py3-none-any.whl", hash = "sha256:f19ed0e2daa74302069bbbbf9e82902854ffa780bc790742a810a9aaa52f65ec"},
+    {file = "types-requests-2.32.0.20240622.tar.gz", hash = "sha256:ed5e8a412fcc39159d6319385c009d642845f250c63902718f605cd90faade31"},
+    {file = "types_requests-2.32.0.20240622-py3-none-any.whl", hash = "sha256:97bac6b54b5bd4cf91d407e62f0932a74821bc2211f22116d9ee1dd643826caf"},
 ]
 
 [package.dependencies]
@@ -1412,13 +1412,13 @@ urllib3 = ">=2"
 
 [[package]]
 name = "typing-extensions"
-version = "4.12.1"
+version = "4.12.2"
 description = "Backported and Experimental Type Hints for Python 3.8+"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "typing_extensions-4.12.1-py3-none-any.whl", hash = "sha256:6024b58b69089e5a89c347397254e35f1bf02a907728ec7fee9bf0fe837d203a"},
-    {file = "typing_extensions-4.12.1.tar.gz", hash = "sha256:915f5e35ff76f56588223f15fdd5938f9a1cf9195c0de25130c627e4d597f6d1"},
+    {file = "typing_extensions-4.12.2-py3-none-any.whl", hash = "sha256:04e5ca0351e0f3f85c6853954072df659d0d13fac324d0072316b67d7794700d"},
+    {file = "typing_extensions-4.12.2.tar.gz", hash = "sha256:1a7ead55c7e559dd4dee8856e3a88b41225abfe1ce8df57b7c13915fe121ffb8"},
 ]
 
 [[package]]
@@ -1538,4 +1538,4 @@ update-stabilization-branches = ["c2cciutils"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<4.0"
-content-hash = "454efa1118612d88fe409f5f6fb00334f3a1727d8467b7792196e5d8bf43358f"
+content-hash = "082d41c97f5f1007aabb71fcb76a14b5f754209317a8099b1dcba59f0c4ab021"
