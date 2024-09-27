@@ -202,7 +202,13 @@ class CreateBranch:
         if self.repo.get("clean", True):
             run(["git", "clean", "-dfX"], auto_fix_owner=True)
             proc = run(
-                ["git", "stash", "--all", "--message=Stashed by multi repo automation"],
+                [
+                    "git",
+                    "stash",
+                    "--all",
+                    "--include-untracked",
+                    "--message=Stashed by multi repo automation",
+                ],
                 stdout=subprocess.PIPE,
                 exit_on_error=False,
             )
