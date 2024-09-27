@@ -163,13 +163,13 @@ def edit(files: list[str]) -> None:
             os.remove(file)
 
 
-def gh(command: str, *args: str) -> str:  # pylint: disable=invalid-name
+def gh(command: str, *args: str, **kwargs: Any) -> str:  # pylint: disable=invalid-name
     """Run a GitHub command."""
     return run(
-        ["gh", command, f"--repo={get_repo_config()['name']}", *args], stdout=subprocess.PIPE
+        ["gh", command, f"--repo={get_repo_config()['name']}", *args], stdout=subprocess.PIPE, **kwargs
     ).stdout.strip()
 
 
-def gh_json(command: str, fields: list[str], *args: str) -> list[dict[str, str]]:
+def gh_json(command: str, fields: list[str], *args: str, **kwargs: Any) -> list[dict[str, str]]:
     """Get the JSON from a GitHub command."""
-    return cast(list[dict[str, str]], json.loads(gh(command, f"--json={','.join(fields)}", *args)))
+    return cast(list[dict[str, str]], json.loads(gh(command, f"--json={','.join(fields)}", *args, **kwargs)))
