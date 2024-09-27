@@ -970,10 +970,10 @@ class JSON5List(list[Any], JSON5Item):
             self.append(value)
 
 
-_DICT_START_RE = re.compile(r"^ +?'?([a-zA-Z0-9-]+)'?: {$")
-_SEQ_START_RE = re.compile(r"^ +?'?([a-zA-Z0-9-]+)'?: \[$")
+_DICT_START_RE = re.compile(r"^ +?[\"']?([a-zA-Z0-9-]+)[\"']?: {$")
+_SEQ_START_RE = re.compile(r"^ +?[\"']?([a-zA-Z0-9-]+)[\"']?: \[$")
 _COMMENT_RE = re.compile(r"^ *?/\*\*? (.*) \*/$")
-_SIMPLE_RE = re.compile(r"^ +?'?([a-zA-Z0-9-]+)'?: (.*),$")
+_SIMPLE_RE = re.compile(r"^ +?[\"']?([a-zA-Z0-9-]+)[\"']?: (.*),$")
 
 
 class EditJSON5(_EditDict):
