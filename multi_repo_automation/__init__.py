@@ -233,6 +233,7 @@ class CreateBranch:
                 ],
                 auto_fix_owner=True,
             )
+            run(["git", "submodule", "update"], exit_on_error=False)
         run(["git", "status"])
 
     def __exit__(
