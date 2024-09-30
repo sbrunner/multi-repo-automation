@@ -1267,7 +1267,7 @@ class EditRenovateConfigV2(EditJSON5):
         """Get the package rule index in the Renovate config."""
         if "packageRules" in self.data:
             for index, package_rule in enumerate(self.data["packageRules"]):
-                if package_rule.comment == comment:
+                if "\n".join(package_rule.comment) == comment:
                     return index
 
             if checks_keys is not None:
