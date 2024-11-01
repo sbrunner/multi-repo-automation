@@ -44,7 +44,7 @@ json5 = "0.9.25"
 configupdater = "3.2"
 typing_extensions = "4.12.2"
 idna = "3.10"
-cryptography = "43.0.1"
+cryptography = "43.0.3"
 urllib3 = "2.2.3"
 certifi = "2024.8.30"
 
@@ -54,7 +54,7 @@ update_stabilization_branches = ["c2cciutils"]
 [tool.poetry.group.dev.dependencies]
 prospector = { extras = ["with_bandit", "with_mypy", "with_pyroma"], version = "1.10.3" }
 types-PyYAML = "6.0.12.20240917"
-types-requests = "2.32.0.20240914"
+types-requests = "2.32.0.20241016"
 prospector-profile-duplicated = "1.5.0"
 prospector-profile-utils = "1.7.2"
 
