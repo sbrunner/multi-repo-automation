@@ -13,8 +13,9 @@ from distutils.version import (  # pylint: disable=deprecated-module,useless-sup
 from types import TracebackType
 from typing import Any, Callable, Literal, Optional, TypedDict, cast
 
-import c2cciutils.security
+import c2cciutils
 import requests
+import security_md
 import yaml
 from identify import identify
 
@@ -499,7 +500,7 @@ def replace(filename: str, search_text: str, replace_text: str) -> None:
         file_.write(content)
 
 
-def get_security(repo: Repo) -> Optional[c2cciutils.security.Security]:
+def get_security(repo: Repo) -> Optional[security_md.Security]:
     """Get the security file, parsed."""
     security_url = (
         f"https://raw.githubusercontent.com/{repo['name']}/{repo.get('master_branch', 'master')}/SECURITY.md"
@@ -510,7 +511,7 @@ def get_security(repo: Repo) -> Optional[c2cciutils.security.Security]:
             security_url, headers=c2cciutils.add_authorization_header({}), timeout=30
         )
     if security_response.ok:
-        return c2cciutils.security.Security(security_response.text)
+        return security_md.Security(security_response.text)
     return None
 
 
