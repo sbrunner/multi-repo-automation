@@ -73,7 +73,7 @@ jobs:
 
       - run: pip install --requirement=ci/requirements.txt
 
-      - run: poetry install --extras=update_stabilization_branches
+      - run: poetry install
       - name: Versions
         run: |
           poetry --version
