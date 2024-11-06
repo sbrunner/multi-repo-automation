@@ -11,9 +11,8 @@ from distutils.version import (  # pylint: disable=deprecated-module,useless-sup
     LooseVersion,
 )
 from types import TracebackType
-from typing import Any, Callable, Literal, Optional, TypedDict, cast
+from typing import Any, Callable, Literal, Optional, TypedDict
 
-import c2cciutils
 import requests
 import security_md
 import yaml
@@ -500,16 +499,55 @@ def replace(filename: str, search_text: str, replace_text: str) -> None:
         file_.write(content)
 
 
-def get_security(repo: Repo) -> Optional[security_md.Security]:
+def _gopass(key: str, default: Optional[str] = None) -> Optional[str]:
+    """
+    Get a value from gopass.
+
+    Arguments:
+    ---------
+    key: The key to get
+    default: the value to return if gopass is not found
+
+    Return the value
+    """
+    try:
+        return subprocess.check_output(["gopass", "show", key]).strip().decode()  # nosec
+    except FileNotFoundError:
+        if default is not None:
+            return default
+        raise
+
+
+def _add_authorization_header(headers: dict[str, str]) -> dict[str, str]:
+    """
+    Add the Authorization header needed to be authenticated on GitHub.
+
+    Arguments:
+    ---------
+    headers: The headers
+
+    Return the headers (to be chained)
+    """
+    try:
+        token = (
+            os.environ["GITHUB_TOKEN"].strip()
+            if "GITHUB_TOKEN" in os.environ
+            else _gopass("gs/ci/github/token/gopass")
+        )
+        headers["Authorization"] = f"Bearer {token}"
+        return headers
+    except FileNotFoundError:
+        return headers
+
+
+def _get_security(repo: Repo) -> Optional[security_md.Security]:
     """Get the security file, parsed."""
     security_url = (
         f"https://raw.githubusercontent.com/{repo['name']}/{repo.get('master_branch', 'master')}/SECURITY.md"
     )
     security_response = requests.get(security_url, timeout=30)
     if not security_response.ok:
-        security_response = requests.get(
-            security_url, headers=c2cciutils.add_authorization_header({}), timeout=30
-        )
+        security_response = requests.get(security_url, headers=_add_authorization_header({}), timeout=30)
     if security_response.ok:
         return security_md.Security(security_response.text)
     return None
@@ -522,13 +560,6 @@ class VersionSupport(TypedDict):
     supported_until: str
 
 
-def _get_version_support(data: list[Any], version_index: int, support_index: int) -> VersionSupport:
-    return {
-        "version": cast(str, data[version_index]),
-        "supported_until": cast(str, data[support_index]),
-    }
-
-
 def get_stabilization_versions_support(repo: Repo) -> list[VersionSupport]:
     """
     Update the list of stabilization branches in the repo.
@@ -536,7 +567,7 @@ def get_stabilization_versions_support(repo: Repo) -> list[VersionSupport]:
     From the `SECURITY.md` file.
     """
     versions: list[VersionSupport] = []
-    security = get_security(repo)
+    security = _get_security(repo)
     if security is not None:
         if "Version" not in security.headers:
             return versions
@@ -592,9 +623,9 @@ class BranchSupport(TypedDict):
     supported_until: str
 
 
-def _get_branch_support(version_branch: dict[str, Any], version: VersionSupport) -> BranchSupport:
+def _get_branch_support(version: VersionSupport) -> BranchSupport:
     return {
-        "branch": cast(str, version_branch[version["version"]]),
+        "branch": version["version"],
         "supported_until": version["supported_until"],
     }
 
@@ -605,29 +636,7 @@ def get_stabilization_branches_support(repo: Repo) -> list[BranchSupport]:
 
     From the `SECURITY.md` file.
     """
-    remotes = [r for r in run(["git", "remote"], stdout=subprocess.PIPE).stdout.split() if r != ""]
-    remote_branches = [
-        b.strip()[len("remotes/") :]
-        for b in run(["git", "branch", "--all"], stdout=subprocess.PIPE).stdout.split()
-        if b != "" and b.strip().startswith("remotes/")
-    ]
-    if "upstream" in remotes:
-        remote_branches = [b[len("upstream") + 1 :] for b in remote_branches if b.startswith("upstream/")]
-    elif "origin" in remotes:
-        remote_branches = [b[len("origin") + 1 :] for b in remote_branches if b.startswith("origin/")]
-    else:
-        remote_branches = ["/".join(b.split("/")[1:]) for b in remote_branches]
-
-    config = c2cciutils.get_config() or {}
-    branch_re = c2cciutils.compile_re(config.get("version", {}).get("branch_to_version_re", []))
-    branches_match = [c2cciutils.match(b, branch_re) for b in remote_branches]
-    version_branch = {m.groups()[0] if m.groups() else b: b for m, c, b in branches_match if m is not None}
-
-    return [
-        _get_branch_support(version_branch, version)
-        for version in get_stabilization_versions_support(repo)
-        if version["version"] in version_branch
-    ]
+    return [_get_branch_support(version) for version in get_stabilization_versions_support(repo)]
 
 
 def get_stabilization_branches(repo: Repo) -> set[str]:

@@ -15,25 +15,6 @@ files = [
 typing-extensions = {version = ">=4.0.0", markers = "python_version < \"3.11\""}
 
 [[package]]
-name = "attrs"
-version = "24.2.0"
-description = "Classes Without Boilerplate"
-optional = true
-python-versions = ">=3.7"
-files = [
-    {file = "attrs-24.2.0-py3-none-any.whl", hash = "sha256:81921eb96de3191c8258c199618104dd27ac608d9366f5e35d011eae1867ede2"},
-    {file = "attrs-24.2.0.tar.gz", hash = "sha256:5cfb1b9148b5b086569baec03f20d7b6bf3bcacc9a42bebf87ffaaca362f6346"},
-]
-
-[package.extras]
-benchmark = ["cloudpickle", "hypothesis", "mypy (>=1.11.1)", "pympler", "pytest (>=4.3.0)", "pytest-codspeed", "pytest-mypy-plugins", "pytest-xdist[psutil]"]
-cov = ["cloudpickle", "coverage[toml] (>=5.3)", "hypothesis", "mypy (>=1.11.1)", "pympler", "pytest (>=4.3.0)", "pytest-mypy-plugins", "pytest-xdist[psutil]"]
-dev = ["cloudpickle", "hypothesis", "mypy (>=1.11.1)", "pre-commit", "pympler", "pytest (>=4.3.0)", "pytest-mypy-plugins", "pytest-xdist[psutil]"]
-docs = ["cogapp", "furo", "myst-parser", "sphinx", "sphinx-notfound-page", "sphinxcontrib-towncrier", "towncrier (<24.7)"]
-tests = ["cloudpickle", "hypothesis", "mypy (>=1.11.1)", "pympler", "pytest (>=4.3.0)", "pytest-mypy-plugins", "pytest-xdist[psutil]"]
-tests-mypy = ["mypy (>=1.11.1)", "pytest-mypy-plugins"]
-
-[[package]]
 name = "bandit"
 version = "1.7.10"
 description = "Security oriented static analyser for python code."
@@ -83,29 +64,6 @@ uv = ["uv (>=0.1.18)"]
 virtualenv = ["virtualenv (>=20.0.35)"]
 
 [[package]]
-name = "c2cciutils"
-version = "1.7.1"
-description = "Common utilities for Camptocamp CI"
-optional = true
-python-versions = "<4.0,>=3.9"
-files = [
-    {file = "c2cciutils-1.7.1-py3-none-any.whl", hash = "sha256:fe2cc42b822a28dca76a9598d5b19a168625241dab502716020ad1b8fe1af096"},
-    {file = "c2cciutils-1.7.1.tar.gz", hash = "sha256:b7101acac74888fe9ad1d763d827350dd2038bffda01bb40708bf7b6361ccd8b"},
-]
-
-[package.dependencies]
-debian-inspector = ">=31.0.0,<32.0.0"
-defusedxml = ">=0.0.0,<1.0.0"
-PyYAML = ">=6.0.0,<7.0.0"
-requests = ">=2.0.0,<3.0.0"
-"ruamel.yaml" = ">=0.0.0,<1.0.0"
-security-md = ">=0.0.0,<1.0.0"
-
-[package.extras]
-publish = ["google-api-python-client (>=2.0.0,<3.0.0)", "google-auth-httplib2 (>=0.0.0,<1.0.0)", "google-auth-oauthlib (>=1.0.0,<2.0.0)", "id (>=1.0.0,<2.0.0)", "twine (>=5.0.0,<6.0.0)"]
-version = ["multi-repo-automation (>=1.0.0,<2.0.0)"]
-
-[[package]]
 name = "certifi"
 version = "2024.8.30"
 description = "Python package for providing Mozilla's CA Bundle."
@@ -114,17 +72,6 @@ python-versions = ">=3.6"
 files = [
     {file = "certifi-2024.8.30-py3-none-any.whl", hash = "sha256:922820b53db7a7257ffbda3f597266d435245903d80737e34f8a45ff3e3230d8"},
     {file = "certifi-2024.8.30.tar.gz", hash = "sha256:bec941d2aa8195e248a60b31ff9f0558284cf01a52591ceda73ea9afffd69fd9"},
-]
-
-[[package]]
-name = "chardet"
-version = "5.2.0"
-description = "Universal encoding detector for Python 3"
-optional = true
-python-versions = ">=3.7"
-files = [
-    {file = "chardet-5.2.0-py3-none-any.whl", hash = "sha256:e1cf59446890a00105fe7b7912492ea04b6e6f06d4b742b2c788469e34c82970"},
-    {file = "chardet-5.2.0.tar.gz", hash = "sha256:1b3b6ff479a8c414bc3fa2c0852995695c4a026dcd6d0633b2dd092ca39c1cf7"},
 ]
 
 [[package]]
@@ -265,25 +212,6 @@ files = [
 
 [package.extras]
 testing = ["flake8", "pytest", "pytest-cov", "pytest-randomly", "pytest-xdist", "sphinx"]
-
-[[package]]
-name = "debian-inspector"
-version = "31.1.0"
-description = "Utilities to parse Debian package, copyright and control files."
-optional = true
-python-versions = ">=3.7"
-files = [
-    {file = "debian_inspector-31.1.0-py3-none-any.whl", hash = "sha256:77dfeb34492dd49d8593d4f7146ffa3f71fca703737824e09d7472e0eafca567"},
-    {file = "debian_inspector-31.1.0.tar.gz", hash = "sha256:ebcfbc17064f10bd3b6d2122cdbc97b71a494af0ebbafaf9a8ceadfe8b164f99"},
-]
-
-[package.dependencies]
-attrs = ">=19.2,<20.1.0 || >20.1.0"
-chardet = ">=3.0.0"
-
-[package.extras]
-docs = ["Sphinx (>=5.0.2)", "doc8 (>=0.11.2)", "sphinx-autobuild", "sphinx-copybutton", "sphinx-reredirects (>=0.1.2)", "sphinx-rtd-dark-mode (>=1.3.0)", "sphinx-rtd-theme (>=1.0.0)", "sphinxcontrib-apidoc (>=0.3.0)"]
-testing = ["aboutcode-toolkit (>=7.0.2)", "black", "commoncode", "isort", "pycodestyle (>=2.8.0)", "pytest (>=6,!=7.0.0)", "pytest-xdist (>=2)", "twine"]
 
 [[package]]
 name = "defusedxml"
@@ -1301,10 +1229,7 @@ enabler = ["pytest-enabler (>=2.2)"]
 test = ["big-O", "importlib-resources", "jaraco.functools", "jaraco.itertools", "jaraco.test", "more-itertools", "pytest (>=6,!=8.1.*)", "pytest-ignore-flaky"]
 type = ["pytest-mypy"]
 
-[extras]
-update-stabilization-branches = ["c2cciutils"]
-
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<4.0"
-content-hash = "ef4f13e8a64fedf482edbde1eb0615264036db28bac32cc3a456724cd21fd071"
+content-hash = "0fa7e0742273caf9e54d2447b13f0670ea57f4e13f1c0ff5ea1ee4c622f8552d"
