@@ -7,12 +7,10 @@ import shutil
 import subprocess  # nosec
 import tempfile
 import traceback
-from distutils.version import (  # pylint: disable=deprecated-module,useless-suppression
-    LooseVersion,
-)
 from types import TracebackType
 from typing import Any, Callable, Literal, Optional, TypedDict
 
+import packaging.version
 import requests
 import security_md
 import yaml
@@ -610,7 +608,7 @@ def get_stabilization_versions(repo: Repo) -> list[str]:
     if versions:
         stabilization_versions = list(versions)
         try:
-            stabilization_versions.sort(key=LooseVersion)
+            stabilization_versions.sort(key=packaging.version.parse)
         except TypeError:
             stabilization_versions.sort()
     return stabilization_versions
