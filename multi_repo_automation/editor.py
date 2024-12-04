@@ -620,7 +620,7 @@ class EditRenovateConfig(Edit):
     Edit the Renovate config file.
 
     Conserve the comments, consider that we have at least the
-    packageRules, and just before the regexManagers.
+    packageRules, and just before the customManagers.
     """
 
     def __init__(self, filename: str = ".github/renovate.json5", **kwargs: Any):
@@ -639,8 +639,8 @@ class EditRenovateConfig(Edit):
         data = data.rstrip()
         data = f"{data},"
 
-        if "regexManagers" in self.data:
-            index = self.data.rindex("regexManagers")
+        if "customManagers" in self.data:
+            index = self.data.rindex("customManagers")
             self.data = self.data[:index] + data + self.data[index:]
         elif "packageRules" in self.data:
             index = self.data.rindex("packageRules")
@@ -683,7 +683,7 @@ class EditRenovateConfig(Edit):
         if test in self.data:
             return
 
-        if "regexManagers" in self.data:
+        if "customManagers" in self.data:
             if "packageRules" in self.data:
                 index = self.data.rindex("packageRules")
                 index = self.data.rindex("]", 0, index)
@@ -693,10 +693,10 @@ class EditRenovateConfig(Edit):
                 self.data = self.data[:index] + data + self.data[index:]
         elif "packageRules" in self.data:
             index = self.data.rindex("packageRules")
-            self.data = self.data[:index] + f" regexManagers: [{data}],\n" + self.data[index:]
+            self.data = self.data[:index] + f" customManagers: [{data}],\n" + self.data[index:]
         else:
             index = self.data.rindex("}")
-            self.data = self.data[:index] + f" regexManagers: [{data}],\n" + self.data[index:]
+            self.data = self.data[:index] + f" customManagers: [{data}],\n" + self.data[index:]
 
     def add_package_rule(
         self, data: Union[str, list[Any], dict[str, Any]], test: str, comment: Optional[str] = None
@@ -1200,7 +1200,7 @@ class EditRenovateConfigV2(EditJSON5):
     Edit the Renovate config file.
 
     Conserve the comments, consider that we have at least the
-    packageRules, and just before the regexManagers.
+    packageRules, and just before the customManagers.
     """
 
     def __init__(self, filename: str = ".github/renovate.json5", **kwargs: Any):
@@ -1208,12 +1208,12 @@ class EditRenovateConfigV2(EditJSON5):
 
     def regex_manager_index(self, data: dict[str, Any], comment: Optional[list[str]] = None) -> Optional[int]:
         """Remove a regex manager to the Renovate config."""
-        if "regexManagers" not in self.data:
+        if "customManagers" not in self.data:
             return None
 
         found = False
         found_index = -1
-        for index, regex_manager in enumerate(self.data["regexManagers"]):
+        for index, regex_manager in enumerate(self.data["customManagers"]):
             if comment is not None and regex_manager.comment == comment:
                 found = True
                 found_index = index
@@ -1244,19 +1244,19 @@ class EditRenovateConfigV2(EditJSON5):
         index = self.regex_manager_index(data, comment)
 
         if index is not None:
-            self.data["regexManagers"][index] = attribute
+            self.data["customManagers"][index] = attribute
         else:
-            self.data.setdefault("regexManagers", []).append(attribute)
+            self.data.setdefault("customManagers", []).append(attribute)
 
     def remove_regex_manager(self, data: dict[str, Any], comment: Optional[list[str]] = None) -> None:
         """Remove a regex manager to the Renovate config."""
         index = self.regex_manager_index(data, comment)
 
-        if "regexManagers" not in self.data:
-            self.data["regexManagers"] = JSON5List()
+        if "customManagers" not in self.data:
+            self.data["customManagers"] = JSON5List()
 
         if index is not None:
-            del self.data["regexManagers"][index]
+            del self.data["customManagers"][index]
 
     def package_rule_index(
         self,
