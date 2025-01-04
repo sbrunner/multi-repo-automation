@@ -507,6 +507,7 @@ def _gopass(key: str, default: Optional[str] = None) -> Optional[str]:
     default: the value to return if gopass is not found
 
     Return the value
+
     """
     try:
         return subprocess.check_output(["gopass", "show", key]).strip().decode()  # nosec
@@ -525,6 +526,7 @@ def _add_authorization_header(headers: dict[str, str]) -> dict[str, str]:
     headers: The headers
 
     Return the headers (to be chained)
+
     """
     try:
         token = (
