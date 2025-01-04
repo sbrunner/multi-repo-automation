@@ -49,11 +49,19 @@ jobs:
           path: /tmp/pre-commit.patch
           retention-days: 1
         if: failure()
+
+      # Mark as SUCCESS
+      - run: echo "SUCCESS" > /tmp/pre-commit.success
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PRE-COMMIT-SUCCESS
+          path: /tmp/pre-commit.success
+          retention-days: 1
+
   build:
     name: Run tests
     runs-on: ubuntu-24.04
     timeout-minutes: 15
-    needs: pre-commit
 
     strategy:
       fail-fast: false
@@ -87,14 +95,39 @@ jobs:
       - run: pip install -e .
       - run: mra-yaml --test -
 
+  build-success:
+    name: Build success
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    needs: build
+
+    steps:
+      # Mark as SUCCESS
+      - run: echo "SUCCESS" > /tmp/build.success
+      - uses: actions/upload-artifact@v4
+        with:
+          name: BUILD-SUCCESS
+          path: /tmp/build.success
+          retention-days: 1
+
   publish:
     name: Publish
     runs-on: ubuntu-24.04
     timeout-minutes: 15
-    if: "!startsWith(github.event.head_commit.message, '[skip ci] ')"
-    needs: build
+    if: always() && !startsWith(github.event.head_commit.message, '[skip ci] ')
+    needs:
+      - build-success
+      - pre-commit
 
     steps:
+      # Check success
+      - uses: actions/download-artifact@v4
+        with:
+          name: PRE-COMMIT-SUCCESS
+      - uses: actions/download-artifact@v4
+        with:
+          name: BUILD-SUCCESS
+
       - uses: actions/checkout@v4
 
       - uses: actions/setup-python@v5
