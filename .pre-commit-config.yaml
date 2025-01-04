@@ -105,7 +105,7 @@ repos:
           - --output-format=pylint
         additional_dependencies:
           - prospector-profile-duplicated==1.10.1 # pypi
-          - prospector-profile-utils==1.14.1 # pypi
+          - prospector-profile-utils==1.15.1 # pypi
   - repo: https://github.com/sbrunner/jsonschema-validator
     rev: 1.0.0
     hooks:
