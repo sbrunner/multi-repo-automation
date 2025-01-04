@@ -60,7 +60,6 @@ class _Edit:
         run_pre_commit: bool = True,
         diff: bool = False,
     ):
-        """Initialize the object."""
         self.filename = filename
         self.force = force
         self.exists = os.path.exists(filename)
@@ -283,7 +282,6 @@ class EditYAML(_EditDict, dict[str, Any]):
         offset: int = 2,
         **kwargs: Any,
     ):
-        """Initialize the object."""
         self.yaml = ruamel.yaml.YAML()
         self.yaml.default_flow_style = default_flow_style
         self.yaml.width = width
@@ -390,7 +388,6 @@ class EditConfig(_EditDict):
         filename: str,
         **kwargs: Any,
     ):
-        """Initialize the object."""
         self.updater = ConfigUpdater()
         super().__init__(filename, **kwargs)
 
@@ -575,10 +572,11 @@ class EditPreCommitConfig(EditYAML):
                         add_start_end = False
                         if attribute_value.strip().startswith("(?x)"):
                             attribute_value = attribute_value.strip()[4:]
-                        if attribute_value.strip().startswith("(") and attribute_value.strip().endswith(")"):
-                            files_list = attribute_value.strip()[1:-1].split("|")
-                        elif attribute_value.strip().startswith("(") and attribute_value.strip().endswith(
-                            ")"
+                        if (
+                            attribute_value.strip().startswith("(")
+                            and attribute_value.strip().endswith(")")
+                            or attribute_value.strip().startswith("(")
+                            and attribute_value.strip().endswith(")")
                         ):
                             files_list = attribute_value.strip()[1:-1].split("|")
                         elif attribute_value.strip().startswith("^(") and attribute_value.strip().endswith(
@@ -1045,7 +1043,7 @@ class EditJSON5(_EditDict):
                 lines = lines[1:]
                 continue
 
-            assert False, lines[0]
+            raise AssertionError(lines[0])
 
     @staticmethod
     def _browse_dict(parent: JSON5Dict, lines: list[str]) -> list[str]:
@@ -1100,7 +1098,7 @@ class EditJSON5(_EditDict):
                 parent.children[name] = attribute_simple
                 continue
 
-            assert False, lines[0]
+            raise AssertionError(lines[0])
 
     @staticmethod
     def _dump_attribute_name(attribute_name: str) -> str:
@@ -1288,9 +1286,7 @@ class EditRenovateConfigV2(EditJSON5):
 
             for index, package_rule in enumerate(self.data["packageRules"]):
                 success = True
-                if not isinstance(package_rule, JSON5Dict):
-                    success = False
-                elif package_rule.keys() != data.keys():
+                if not isinstance(package_rule, JSON5Dict) or package_rule.keys() != data.keys():
                     success = False
                 else:
                     for key, value in data.items():

@@ -260,9 +260,8 @@ class CreateBranch:
             )
         if self.new_branch_name != self.old_branch_name:
             run(["git", "checkout", self.old_branch_name, "--"])
-        if self.has_stashed:
-            if run(["git", "stash", "pop"], False).returncode != 0:
-                run(["git", "reset", "--hard"])
+        if self.has_stashed and run(["git", "stash", "pop"], False).returncode != 0:
+            run(["git", "reset", "--hard"])
         return False
 
 
@@ -413,9 +412,8 @@ class Branch:
 
         if self.branch_name != self.old_branch_name:
             run(["git", "checkout", self.old_branch_name])
-        if self.has_stashed:
-            if run(["git", "stash", "pop"], False).returncode != 0:
-                run(["git", "reset", "--hard"])
+        if self.has_stashed and run(["git", "stash", "pop"], False).returncode != 0:
+            run(["git", "reset", "--hard"])
         return False
 
 
@@ -839,10 +837,8 @@ def main(
     global _ARGUMENTS  # pylint: disable=global-statement
     _ARGUMENTS = args
 
-    pull_request_on_stabilization_branches = (
-        config["pull_request_on_stabilization_branches"]
-        if "pull_request_on_stabilization_branches" in config
-        else args.on_stabilization_branches
+    pull_request_on_stabilization_branches = config.get(
+        "pull_request_on_stabilization_branches", args.on_stabilization_branches
     )
     pull_request_title = args.pull_request_title
     pull_request_body = args.pull_request_body
