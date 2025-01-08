@@ -20,7 +20,7 @@ def commented_sec(value: list[Union[tuple[Any], tuple[Any, str]]]) -> ruamel.yam
 
 
 def commented_map(
-    value: dict[str, Union[tuple[Any], tuple[Any, str], tuple[Any, str, int]]]
+    value: dict[str, Union[tuple[Any], tuple[Any, str], tuple[Any, str, int]]],
 ) -> ruamel.yaml.comments.CommentedMap:
     """Get a commented dictionary (for ruamel)."""
     result = ruamel.yaml.comments.CommentedMap({k: v[0] for k, v in value.items()})
