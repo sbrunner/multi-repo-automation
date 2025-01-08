@@ -927,6 +927,8 @@ class JSON5List(list[Any], JSON5Item):
             elif isinstance(value, list):
                 attribute = JSON5RowList()
                 attribute.value = value
+            else:
+                attribute = value
         else:
             attribute = value
         self.children[key] = attribute
@@ -1140,7 +1142,7 @@ class EditJSON5(_EditDict):
         lines = []
 
         for attribute in parent.children:
-            if attribute.comment:
+            if isinstance(attribute, JSON5Item) and attribute.comment:
                 if len(attribute.comment) == 1:
                     lines.append(f"{indent}/** {attribute.comment[0]} */")
                 else:
