@@ -163,7 +163,7 @@ seq:
     python = get_python(document)
     import multi_repo_automation.commented_yaml as mra_yaml  # noqa
 
-    obj = eval(python)  # pylint: disable=eval-used
+    obj = eval(python)  # pylint: disable=eval-used # noqa
     new_doc = StringIO()
     yaml.dump(obj, new_doc)
     print(new_doc.getvalue())
