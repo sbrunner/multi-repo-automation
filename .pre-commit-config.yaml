@@ -20,24 +20,9 @@ repos:
     hooks:
       - id: copyright
       - id: workflows-require-timeout
-      - id: poetry-check
-        additional_dependencies:
-          - poetry==1.8.5 # pypi
       - id: poetry-lock
         additional_dependencies:
           - poetry==1.8.5 # pypi
-  - repo: https://github.com/psf/black
-    rev: 24.10.0
-    hooks:
-      - id: black
-  - repo: https://github.com/PyCQA/isort
-    rev: 5.13.2
-    hooks:
-      - id: isort
-  - repo: https://github.com/PyCQA/autoflake
-    rev: v2.3.1
-    hooks:
-      - id: autoflake
   - repo: https://github.com/codespell-project/codespell
     rev: v2.3.0
     hooks:
@@ -45,12 +30,6 @@ repos:
         args:
           - --ignore-words=.github/spell-ignore-words.txt
         exclude: ^poetry.lock$
-  - repo: https://github.com/asottile/pyupgrade
-    rev: v3.19.1
-    hooks:
-      - id: pyupgrade
-        args:
-          - --py39-plus
   - repo: https://github.com/pre-commit/mirrors-prettier
     rev: v3.1.0
     hooks:
@@ -76,8 +55,6 @@ repos:
     rev: 0.30.0
     hooks:
       - id: check-github-workflows
-      - id: check-renovate
-        additional_dependencies: [pyjson5]
       - id: check-github-actions
       - id: check-jsonschema
         name: Check GitHub Workflows set timeout-minutes
@@ -100,21 +77,28 @@ repos:
     hooks:
       - id: prospector
         args:
-          - --tool=pydocstyle
+          - --tool=ruff
           - --die-on-tool-error
           - --output-format=pylint
         additional_dependencies:
           - prospector-profile-duplicated==1.10.1 # pypi
           - prospector-profile-utils==1.15.1 # pypi
+          - ruff==0.7.3 # pypi
   - repo: https://github.com/sbrunner/jsonschema-validator
     rev: 1.0.0
     hooks:
       - id: jsonschema-validator
         files: |-
-          (?x)^(
-              ci/config\.yaml
-          )$
+          ^\.github/publish\.yaml$
   - repo: https://github.com/renovatebot/pre-commit-hooks
     rev: 39.86.3
     hooks:
       - id: renovate-config-validator
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.8.1
+    hooks:
+      - id: ruff-format
+  - repo: https://github.com/sbrunner/python-versions-hook
+    rev: 0.8.0
+    hooks:
+      - id: python-versions

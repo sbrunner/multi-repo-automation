@@ -4,3 +4,9 @@ inherits:
   - utils:no-design-checks
   - utils:unsafe
   - duplicated
+mypy:
+  options:
+    python-version: '3.9'
+ruff:
+  options:
+    target-version: py39

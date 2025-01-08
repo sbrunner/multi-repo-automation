@@ -1,18 +1,3 @@
-[tool.black]
-line-length = 110
-target-version = ["py39"]
-
-[tool.isort]
-profile = "black"
-
-[tool.mypy]
-python_version = "3.9"
-ignore_missing_imports = true
-warn_redundant_casts = true
-warn_unused_ignores = true
-warn_return_any = true
-strict = true
-
 [tool.poetry]
 name = "multi-repo-automation"
 version = "0.0.0"
@@ -21,13 +6,18 @@ readme = "README.md"
 keywords = ["pre-commit"]
 license = "BSD-2-Clause"
 classifiers = [
-    "Development Status :: 5 - Production/Stable",
-    "Environment :: Console",
-    "License :: OSI Approved :: BSD License",
-    "Operating System :: OS Independent",
-    "Programming Language :: Python",
-    "Programming Language :: Python :: 3",
-    "Typing :: Typed",
+    'Development Status :: 5 - Production/Stable',
+    'Environment :: Console',
+    'License :: OSI Approved :: BSD License',
+    'Operating System :: OS Independent',
+    'Programming Language :: Python',
+    'Programming Language :: Python :: 3',
+    'Programming Language :: Python :: 3.9',
+    'Programming Language :: Python :: 3.10',
+    'Programming Language :: Python :: 3.11',
+    'Programming Language :: Python :: 3.12',
+    'Programming Language :: Python :: 3.13',
+    'Typing :: Typed',
 ]
 authors = ["Stéphane Brunner <stephane.brunner@gmail.com>"]
 repository = "https://github.com/sbrunner/multi-repo-automation"
@@ -54,6 +44,13 @@ prospector-profile-utils = "1.15.1"
 [tool.poetry.scripts]
 mra-yaml = "multi_repo_automation.commented_yaml:main"
 
+
+[tool.ruff]
+target-version = "py39"
+line-length = 110
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
 [build-system]
 requires = ["poetry-core>=1.0.0", "poetry-dynamic-versioning", "poetry-plugin-tweak-dependencies-version", "poetry-plugin-drop-python-upper-constraint"]
 build-backend = "poetry.core.masonry.api"
@@ -63,8 +60,10 @@ enable = true
 vcs = "git"
 pattern = "^(?P<base>\\d+(\\.\\d+)*)"
 format-jinja = """
-{%- if env.get("VERSION_TYPE") == "version_branch" -%}
-{{serialize_pep440(bump_version(base, 1 if env.get("IS_MASTER") == "TRUE" else 2), dev=distance)}}
+{%- if env.get("VERSION_TYPE") == "default_branch" -%}
+{{serialize_pep440(bump_version(base, 1), dev=distance)}}
+{%- elif env.get("VERSION_TYPE") == "stabilization_branch" -%}
+{{serialize_pep440(bump_version(base, 2), dev=distance)}}
 {%- elif distance == 0 -%}
 {{serialize_pep440(base)}}
 {%- else -%}
