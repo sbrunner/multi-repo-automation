@@ -438,7 +438,7 @@ class _RepoHook(TypedDict):
     """Repo hook."""
 
     repo: _PreCommitRepo
-    hooks: dict[str, PreCommitHook]
+    hooks: dict[str, list[PreCommitHook]]
 
 
 class EditPreCommitConfig(EditYAML):
@@ -491,7 +491,7 @@ class EditPreCommitConfig(EditYAML):
         """Add a hook to the pre-commit config."""
         if hook["id"] not in self.repos_hooks[repo]["hooks"]:
             self.repos_hooks[repo]["repo"]["hooks"].append(hook)
-            self.repos_hooks[repo]["hooks"][hook["id"]] = hook
+            self.repos_hooks[repo]["hooks"].setdefault(hook["id"], []).append(hook)
 
             if ci_skip:
                 self.skip_ci(hook["id"])
