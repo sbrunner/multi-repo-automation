@@ -35,11 +35,11 @@ security_md = "1.0.0"
 typing-extensions = "4.12.2"
 
 [tool.poetry.group.dev.dependencies]
-prospector = { version = "1.13.3", extras = ["with_bandit", "with_mypy", "with_pyroma", "with_ruff"] }
+prospector = { version = "1.14.0", extras = ["with_bandit", "with_mypy", "with_pyroma", "with_ruff"] }
 types-PyYAML = "6.0.12.20241230"
 types-requests = "2.32.0.20241016"
 prospector-profile-duplicated = "1.10.4"
-prospector-profile-utils = "1.15.1"
+prospector-profile-utils = "1.17.0"
 
 [tool.poetry.scripts]
 mra-yaml = "multi_repo_automation.commented_yaml:main"
