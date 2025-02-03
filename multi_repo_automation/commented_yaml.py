@@ -75,7 +75,7 @@ def get_python(value: Any, prefix: str = "") -> str:
                 if key in comments:
                     result += [
                         f'{prefix}    "{key}": [',
-                        f'{prefix}        {get_python(val, prefix + "        ")},',
+                        f"{prefix}        {get_python(val, prefix + '        ')},",
                         f"{prefix}        {repr(comments[key][0])},",
                     ]
                     if comments[key][1] == 3:
@@ -114,12 +114,12 @@ def get_python(value: Any, prefix: str = "") -> str:
                 if key in comments:
                     result += [
                         f"{prefix}    [",
-                        f'{prefix}        {get_python(val, prefix + "    ")},',
+                        f"{prefix}        {get_python(val, prefix + '    ')},",
                         f"{prefix}        {repr(comments[key][0])},",
                         f"{prefix}    ],",
                     ]
                 else:
-                    result.append(f'{prefix}    [{get_python(val, prefix + "    ")}],')
+                    result.append(f"{prefix}    [{get_python(val, prefix + '    ')}],")
 
             result.append(f"{prefix}])")
             return "\n".join(result)
