@@ -77,6 +77,8 @@ repos:
     hooks:
       - id: prospector
         args:
+          - --profile=.prospector.yaml
+          - --profile=utils:unsafe
           - --tool=ruff
           - --die-on-tool-error
           - --output-format=pylint

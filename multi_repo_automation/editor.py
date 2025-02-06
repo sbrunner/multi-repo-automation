@@ -455,9 +455,9 @@ class EditPreCommitConfig(EditYAML):
 
         self.repos_hooks: dict[str, _RepoHook] = {}
         for repo in self.setdefault("repos", []):
-            self.repos_hooks.setdefault(
-                repo["repo"], {"repo": repo, "hooks": {hook["id"]: hook for hook in repo["hooks"]}}
-            )
+            self.repos_hooks.setdefault(repo["repo"], {"repo": repo, "hooks": {}})
+            for hook in repo["hooks"]:
+                self.repos_hooks[repo["repo"]]["hooks"].setdefault(hook["id"], []).append(hook)
         for repo in self["repos"]:
             for hook in repo.setdefault("hooks", []):
                 for tag in ("files", "excludes"):
@@ -487,9 +487,9 @@ class EditPreCommitConfig(EditYAML):
 
             self.repos_hooks.setdefault(repo, {"repo": repo_obj, "hooks": {}})
 
-    def add_hook(self, repo: str, hook: PreCommitHook, ci_skip: bool = False) -> None:
+    def add_hook(self, repo: str, hook: PreCommitHook, ci_skip: bool = False, force: bool = False) -> None:
         """Add a hook to the pre-commit config."""
-        if hook["id"] not in self.repos_hooks[repo]["hooks"]:
+        if force or hook["id"] not in self.repos_hooks[repo]["hooks"]:
             self.repos_hooks[repo]["repo"]["hooks"].append(hook)
             self.repos_hooks[repo]["hooks"].setdefault(hook["id"], []).append(hook)
 
@@ -928,7 +928,8 @@ class JSON5List(list[Any], JSON5Item):
                 attribute = JSON5RowList()
                 attribute.value = value
             else:
-                attribute = value
+                attribute = JSON5RowAttribute()
+                attribute.value = value
         else:
             attribute = value
         self.children[key] = attribute
@@ -953,12 +954,15 @@ class JSON5List(list[Any], JSON5Item):
     def append(self, value: Any) -> None:
         """Append a value."""
         attribute: JSON5Item
-        if not isinstance(value, JSON5Item):
+        if not isinstance(value, (JSON5Item, JSON5RowList)):
             if isinstance(value, dict):
                 attribute = JSON5RowDict()
                 attribute.value = value
             elif isinstance(value, list):
                 attribute = JSON5RowList()
+                attribute.value = value
+            else:
+                attribute = JSON5RowAttribute()
                 attribute.value = value
         else:
             attribute = value

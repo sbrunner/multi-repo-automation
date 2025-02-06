@@ -221,7 +221,7 @@ class CreateBranch:
             run(["git", "reset", "--hard", f"{repo}/{self.base_branch}", "--"])
         else:
             run(["git", "branch", "--delete", "--force", self.new_branch_name], exit_on_error=False)
-            run(
+            process = run(
                 [
                     "git",
                     "checkout",
@@ -230,7 +230,10 @@ class CreateBranch:
                     f"{repo}/{self.base_branch}",
                 ],
                 auto_fix_owner=True,
+                exit_on_error=False,
             )
+            if process.returncode != 0:
+                raise Exception("Fail to checkout the branch")  # pylint: disable=broad-exception-raised
             run(["git", "submodule", "update"], exit_on_error=False)
         run(["git", "status"])
 
@@ -737,22 +740,27 @@ class App:
                                 )
 
                                 for base_branch in base_branches:
-                                    self.kwargs["base_branch"] = base_branch
-                                    if self.do_pr_on_stabilization_branches:
-                                        assert self.branch_prefix is not None
-                                        self.kwargs["new_branch_name"] = (
-                                            f"{self.branch_prefix.rstrip('-')}-{base_branch}"
-                                        )
-                                    create_branch = CreateBranch(repo, **self.kwargs)
-                                    with create_branch:
-                                        self.action()
-                                    if create_branch.pull_request_created:
-                                        if create_branch.message:
-                                            url_to_open.append(create_branch.message)
-                                        else:
-                                            url_to_open.append(f"https://github.com/{repo['name']}/pulls")
-                                        if self.one:
-                                            return
+                                    try:
+                                        self.kwargs["base_branch"] = base_branch
+                                        if self.do_pr_on_stabilization_branches:
+                                            assert self.branch_prefix is not None
+                                            self.kwargs["new_branch_name"] = (
+                                                f"{self.branch_prefix.rstrip('-')}-{base_branch}"
+                                            )
+                                        create_branch = CreateBranch(repo, **self.kwargs)
+                                        with create_branch:
+                                            self.action()
+                                        if create_branch.pull_request_created:
+                                            if create_branch.message:
+                                                url_to_open.append(create_branch.message)
+                                            else:
+                                                url_to_open.append(f"https://github.com/{repo['name']}/pulls")
+                                            if self.one:
+                                                return
+                                    except Exception:  # pylint: disable=broad-exception-caught
+                                        print(f"Error on {repo['name']}/{base_branch}")  # noqa: T001
+                                        print(traceback.format_exc())
+
                             else:
                                 self.action()
                                 if self.one:
