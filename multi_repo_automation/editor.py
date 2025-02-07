@@ -980,6 +980,10 @@ class JSON5List(list[Any], JSON5Item):
         for value in values:
             self.append(value)
 
+    def remove(self, value: Any) -> None:
+        """Remove the value."""
+        self.children.remove(value)
+
 
 _DICT_START_RE = re.compile(r"^ +?[\"']?([a-zA-Z0-9-]+)[\"']?: {$")
 _SEQ_START_RE = re.compile(r"^ +?[\"']?([a-zA-Z0-9-]+)[\"']?: \[$")
