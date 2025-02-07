@@ -114,7 +114,7 @@ class _Edit:
                         difflib.unified_diff(
                             self.original_data.splitlines(keepends=True),
                             new_data.splitlines(keepends=True),
-                        )
+                        ),
                     )
                 else:
                     # Create directory if he didn't exists
@@ -126,7 +126,8 @@ class _Edit:
                     if os.path.exists(".pre-commit-config.yaml") and self.run_pre_commit:
                         try:
                             proc = run(
-                                ["pre-commit", "run", "--color=never", "--files", self.filename], False
+                                ["pre-commit", "run", "--color=never", "--files", self.filename],
+                                False,
                             )
                             if proc.returncode != 0 and os.environ.get("DEBUG", "false").lower() in (
                                 "true",
@@ -143,13 +144,13 @@ class _Edit:
     def load(self, content: io.TextIOWrapper) -> Any:
         """Load the content."""
         del content
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abstractmethod
     def dump(self, data: Any) -> str:
         """Load the content."""
         del data
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abstractmethod
     def get_empty(self) -> Any:
@@ -192,13 +193,13 @@ class _EditDict(_Edit):
     def load(self, content: io.TextIOWrapper) -> dict[str, Any]:
         """Load the content."""
         del content
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abstractmethod
     def dump(self, data: dict[str, Any]) -> str:
         """Load the content."""
         del data
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def get_empty(self) -> dict[str, Any]:
         """Get the empty data."""
@@ -310,7 +311,8 @@ class EditYAML(_EditDict, dict[str, Any]):
                 {
                     "id": "prettier",
                     "additional_dependencies": pre_commit_config.commented_additional_dependencies(
-                        ["prettier@2.8.4"], "npm"
+                        ["prettier@2.8.4"],
+                        "npm",
                     ),
                 },
             )
@@ -512,7 +514,10 @@ class EditPreCommitConfig(EditYAML):
         return result
 
     def add_commented_additional_dependencies(
-        self, hook: PreCommitHook, dependencies: list[str], type_: str
+        self,
+        hook: PreCommitHook,
+        dependencies: list[str],
+        type_: str,
     ) -> None:
         """
         Add comments to the additional dependencies.
@@ -540,7 +545,7 @@ class EditPreCommitConfig(EditYAML):
         result = ruamel.yaml.scalarstring.LiteralScalarString(
             f"""(?x){start}(
   {files_joined}
-){end}"""
+){end}""",
         )
 
         return result
@@ -573,14 +578,13 @@ class EditPreCommitConfig(EditYAML):
                         if attribute_value.strip().startswith("(?x)"):
                             attribute_value = attribute_value.strip()[4:]
                         if (
-                            attribute_value.strip().startswith("(")
-                            and attribute_value.strip().endswith(")")
-                            or attribute_value.strip().startswith("(")
-                            and attribute_value.strip().endswith(")")
+                            attribute_value.strip().startswith("(") and attribute_value.strip().endswith(")")
+                        ) or (
+                            attribute_value.strip().startswith("(") and attribute_value.strip().endswith(")")
                         ):
                             files_list = attribute_value.strip()[1:-1].split("|")
                         elif attribute_value.strip().startswith("^(") and attribute_value.strip().endswith(
-                            ")$"
+                            ")$",
                         ):
                             files_list = attribute_value.strip()[2:-2].split("|")
                             add_start_end = True
@@ -588,7 +592,8 @@ class EditPreCommitConfig(EditYAML):
                             continue
 
                         hook[attribute] = self.create_files_regex(
-                            [f.strip() for f in files_list], add_start_end=add_start_end
+                            [f.strip() for f in files_list],
+                            add_start_end=add_start_end,
                         )
 
     def dump(self, data: dict[str, Any]) -> str:
@@ -668,7 +673,10 @@ class EditRenovateConfig(Edit):
         return f" {{ {data} }},\n"
 
     def add_regex_manager(
-        self, data: Union[str, list[Any], dict[str, Any]], test: str, comment: Optional[str] = None
+        self,
+        data: Union[str, list[Any], dict[str, Any]],
+        test: str,
+        comment: Optional[str] = None,
     ) -> None:
         """Add a regex manager to the Renovate config."""
         data = self._clean_data(data)
@@ -697,7 +705,10 @@ class EditRenovateConfig(Edit):
             self.data = self.data[:index] + f" customManagers: [{data}],\n" + self.data[index:]
 
     def add_package_rule(
-        self, data: Union[str, list[Any], dict[str, Any]], test: str, comment: Optional[str] = None
+        self,
+        data: Union[str, list[Any], dict[str, Any]],
+        test: str,
+        comment: Optional[str] = None,
     ) -> None:
         """Add a package rule to the Renovate config."""
         data = self._clean_data(data)
@@ -725,7 +736,7 @@ class JSON5Item:
 
     def data(self) -> Any:
         """Return the data, no comments."""
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class JSON5RowAttribute(JSON5Item):
@@ -1001,13 +1012,11 @@ class EditJSON5(_EditDict):
             while True:
                 if lines[0].endswith("*/"):
                     line = lines[0][:-2].strip()
-                    if line.startswith("* "):
-                        line = line[2:]
+                    line = line.removeprefix("* ")
                     return [*comment, line], lines[1:]
 
                 line = lines[0].strip()
-                if line.startswith("* "):
-                    line = line[2:]
+                line = line.removeprefix("* ")
                 comment.append(line)
                 lines = lines[1:]
         return [], lines
@@ -1141,7 +1150,7 @@ class EditJSON5(_EditDict):
                     lines.append(f"{indent}],")
                 elif isinstance(attribute, JSON5RowAttribute):
                     lines.append(
-                        f"{indent}{EditJSON5._dump_attribute_name(name)}: {json5.dumps(attribute.value)},"
+                        f"{indent}{EditJSON5._dump_attribute_name(name)}: {json5.dumps(attribute.value)},",
                     )
             else:
                 lines.append(f"{indent}{EditJSON5._dump_attribute_name(name)}: {json5.dumps(attribute)},")
@@ -1195,15 +1204,14 @@ class EditJSON5(_EditDict):
             lines.extend(self._dump_dict(data, "  "))
             lines.append("}")
             return "\n".join(lines)
-        elif isinstance(data, JSON5List):
+        if isinstance(data, JSON5List):
             lines = ["["]
             lines.extend(self._dump_sequence(data, "  "))
             lines.append("]")
             return "\n".join(lines)
-        else:
-            result = json5.dumps(data, indent=2)
-            assert isinstance(result, str)
-            return result
+        result = json5.dumps(data, indent=2)
+        assert isinstance(result, str)
+        return result
 
 
 class EditRenovateConfigV2(EditJSON5):
@@ -1307,9 +1315,8 @@ class EditRenovateConfigV2(EditJSON5):
                         if isinstance(value2, JSON5Item):
                             if value2.data() != value:
                                 success = False
-                        else:
-                            if value2 != value:
-                                success = False
+                        elif value2 != value:
+                            success = False
 
                 if success:
                     return index

@@ -213,7 +213,11 @@ class CreateBranch:
             self.has_stashed = proc.stdout.strip() != "No local changes to save"
         else:
             proc = run(
-                ["git", "stash"], auto_fix_owner=True, stdout=subprocess.PIPE, encoding="utf-8", env={}
+                ["git", "stash"],
+                auto_fix_owner=True,
+                stdout=subprocess.PIPE,
+                encoding="utf-8",
+                env={},
             )
             self.has_stashed = proc.stdout.strip() != "No local changes to save"
         run(["git", "fetch", repo])
@@ -594,7 +598,7 @@ def get_stabilization_versions_support(repo: Repo) -> list[VersionSupport]:
                     {
                         "version": version,
                         "supported_until": data[support_index],
-                    }
+                    },
                 )
     return versions
 
@@ -653,7 +657,9 @@ def get_stabilization_branches(repo: Repo) -> set[str]:
 
 
 def do_on_base_branches(
-    repo: Repo, branch_prefix: str, func: Callable[[Repo], Optional[list[str]]]
+    repo: Repo,
+    branch_prefix: str,
+    func: Callable[[Repo], Optional[list[str]]],
 ) -> list[str]:
     """Do the func action on all the base branches of the repo."""
     result = set()
@@ -758,7 +764,7 @@ class App:
                                             if self.one:
                                                 return
                                     except Exception:  # pylint: disable=broad-exception-caught
-                                        print(f"Error on {repo['name']}/{base_branch}")  # noqa: T001
+                                        print(f"Error on {repo['name']}/{base_branch}")
                                         print(traceback.format_exc())
 
                             else:
@@ -794,27 +800,38 @@ def main(
     args_parser_local.add_argument("--local", action="store_true", help="Enable it.")
 
     args_parser_repos = args_parser.add_argument_group(
-        "repos", "Option used to browse all the repositories, and create pull request with the result."
+        "repos",
+        "Option used to browse all the repositories, and create pull request with the result.",
     )
     args_parser_repos.add_argument(
-        "--repositories", default=repos_filename, help="A YAML file that contains the repositories."
+        "--repositories",
+        default=repos_filename,
+        help="A YAML file that contains the repositories.",
     )
     args_parser_repos.add_argument("--repository-prefix", help="Apply on repository with prefix.")
     args_parser_repos.add_argument("--one", action="store_true", help="Open only one pull request.")
     args_parser_repos.add_argument(
-        "--pull-request-title", help="The pull request title.", default=config.get("pull_request_title", None)
+        "--pull-request-title",
+        help="The pull request title.",
+        default=config.get("pull_request_title", None),
     )
     args_parser_repos.add_argument(
-        "--pull-request-body", help="The pull request body.", default=config.get("pull_request_body", None)
+        "--pull-request-body",
+        help="The pull request body.",
+        default=config.get("pull_request_body", None),
     )
     args_parser_master = args_parser.add_argument_group(
-        "default", "To apply the action on all default branches."
+        "default",
+        "To apply the action on all default branches.",
     )
     args_parser_master.add_argument(
-        "--branch", help="The created branch name.", default=config.get("branch", None)
+        "--branch",
+        help="The created branch name.",
+        default=config.get("branch", None),
     )
     args_parser_stabilization = args_parser.add_argument_group(
-        "stabilization", "To apply the action on all stabilization branches."
+        "stabilization",
+        "To apply the action on all stabilization branches.",
     )
     if "pull_request_on_stabilization_branches" not in config:
         args_parser_stabilization.add_argument(
@@ -833,7 +850,9 @@ def main(
         help="The browser used to open the created pull requests",
     )
     args_parser_repos.add_argument(
-        "--editor", default=user_config.get("editor", "xdg-open"), help="The editor used to open the files"
+        "--editor",
+        default=user_config.get("editor", "xdg-open"),
+        help="The editor used to open the files",
     )
     if action is None:
         args_parser.add_argument("command", help="The command to run.")
@@ -846,7 +865,8 @@ def main(
     _ARGUMENTS = args
 
     pull_request_on_stabilization_branches = config.get(
-        "pull_request_on_stabilization_branches", args.on_stabilization_branches
+        "pull_request_on_stabilization_branches",
+        args.on_stabilization_branches,
     )
     pull_request_title = args.pull_request_title
     pull_request_body = args.pull_request_body

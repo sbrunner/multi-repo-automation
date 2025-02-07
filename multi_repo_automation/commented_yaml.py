@@ -76,10 +76,10 @@ def get_python(value: Any, prefix: str = "") -> str:
                     result += [
                         f'{prefix}    "{key}": [',
                         f"{prefix}        {get_python(val, prefix + '        ')},",
-                        f"{prefix}        {repr(comments[key][0])},",
+                        f"{prefix}        {comments[key][0]!r},",
                     ]
                     if comments[key][1] == 3:
-                        result.append(f"{prefix}        {repr(comments[key][1])},")
+                        result.append(f"{prefix}        {comments[key][1]!r},")
                     result.append(f"{prefix}    ],")
                 else:
                     result.append(
@@ -95,7 +95,7 @@ def get_python(value: Any, prefix: str = "") -> str:
                     for key, value in value.items()
                 ],
                 f"{prefix}}}",
-            ]
+            ],
         )
 
     if isinstance(value, list):
@@ -115,7 +115,7 @@ def get_python(value: Any, prefix: str = "") -> str:
                     result += [
                         f"{prefix}    [",
                         f"{prefix}        {get_python(val, prefix + '    ')},",
-                        f"{prefix}        {repr(comments[key][0])},",
+                        f"{prefix}        {comments[key][0]!r},",
                         f"{prefix}    ],",
                     ]
                 else:
@@ -128,7 +128,7 @@ def get_python(value: Any, prefix: str = "") -> str:
                 "[",
                 *[f"{prefix}    {get_python(value, prefix + '    ')}," for value in value],
                 f"{prefix}]",
-            ]
+            ],
         )
 
     return repr(value)
@@ -163,7 +163,7 @@ seq:
     python = get_python(document)
     import multi_repo_automation.commented_yaml as mra_yaml  # noqa
 
-    obj = eval(python)  # pylint: disable=eval-used # noqa
+    obj = eval(python)  # pylint: disable=eval-used
     new_doc = StringIO()
     yaml.dump(obj, new_doc)
     print(new_doc.getvalue())
@@ -173,7 +173,8 @@ seq:
 def main() -> Any:
     """Convert YAML to Python, with comment."""
     parser = argparse.ArgumentParser(
-        "Convert YAML to Python, with comment (for ruamel)", usage="cat file.yaml > %(prog)s -"
+        "Convert YAML to Python, with comment (for ruamel)",
+        usage="cat file.yaml > %(prog)s -",
     )
     parser.add_argument("document", help="YAML document to convert")
     parser.add_argument("--test", action="store_true", help="Test the conversion")

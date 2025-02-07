@@ -126,7 +126,10 @@ def get_repo_config() -> Repo:
 
 
 def run(
-    cmd: list[str], exit_on_error: bool = True, auto_fix_owner: bool = False, **kwargs: Any
+    cmd: list[str],
+    exit_on_error: bool = True,
+    auto_fix_owner: bool = False,
+    **kwargs: Any,
 ) -> subprocess.CompletedProcess[str]:
     """Run a command."""
     print(f"$ {shlex.join(cmd)}")
@@ -166,7 +169,9 @@ def edit(files: list[str]) -> None:
 def gh(command: str, *args: str, **kwargs: Any) -> str:  # pylint: disable=invalid-name
     """Run a GitHub command."""
     return run(
-        ["gh", command, f"--repo={get_repo_config()['name']}", *args], stdout=subprocess.PIPE, **kwargs
+        ["gh", command, f"--repo={get_repo_config()['name']}", *args],
+        stdout=subprocess.PIPE,
+        **kwargs,
     ).stdout.strip()
 
 
