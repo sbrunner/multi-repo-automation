@@ -731,7 +731,8 @@ class JSON5Item:
 class JSON5RowAttribute(JSON5Item):
     """JSON5 simple attribute (row) with comments."""
 
-    value: Any
+    def __init__(self, value: Any = None) -> None:
+        self.value = value
 
     def data(self) -> Any:
         """Return the data, no comments."""
@@ -798,6 +799,9 @@ class JSON5RowAttribute(JSON5Item):
 class JSON5RowDict(JSON5RowAttribute):
     """Dict (row) with comments."""
 
+    def __init__(self, value: Optional[dict[str, Any]] = None) -> None:
+        super().__init__(value if value is not None else {})
+
     def keys(self) -> DictKeysStrAny:
         """Return the keys."""
         return self.value.keys()  # type: ignore[no-any-return]
@@ -805,6 +809,9 @@ class JSON5RowDict(JSON5RowAttribute):
 
 class JSON5RowList(JSON5RowAttribute):
     """List (row) with comments."""
+
+    def __init__(self, value: Optional[list[Any]] = None) -> None:
+        super().__init__(value if value is not None else [])
 
     def __iter__(self) -> Iterator[Any]:
         """Iterate over the item."""
@@ -907,9 +914,9 @@ class JSON5List(list[Any], JSON5Item):
 
     children: list[JSON5Item]
 
-    def __init__(self) -> None:
+    def __init__(self, children: Optional[list[Any]] = None) -> None:
         super().__init__()
-        self.children = []
+        self.children = [] if children is None else children
 
     def data(self) -> Any:
         """Return the data, no comments."""
