@@ -35,7 +35,7 @@ security_md = "1.0.0"
 typing-extensions = "4.12.2"
 
 [tool.poetry.group.dev.dependencies]
-prospector = { version = "1.14.0", extras = ["with_bandit", "with_mypy", "with_pyroma", "with_ruff"] }
+prospector = { version = "1.14.1", extras = ["with_bandit", "with_mypy", "with_pyroma", "with_ruff"] }
 types-PyYAML = "6.0.12.20241230"
 types-requests = "2.32.0.20241016"
 prospector-profile-duplicated = "1.10.4"
