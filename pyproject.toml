@@ -39,7 +39,7 @@ prospector = { version = "1.14.1", extras = ["with_bandit", "with_mypy", "with_p
 types-PyYAML = "6.0.12.20241230"
 types-requests = "2.32.0.20241016"
 prospector-profile-duplicated = "1.10.4"
-prospector-profile-utils = "1.17.0"
+prospector-profile-utils = "1.20.1"
 
 [tool.poetry.scripts]
 mra-yaml = "multi_repo_automation.commented_yaml:main"

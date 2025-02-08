@@ -9,6 +9,7 @@ import sys
 import traceback
 from abc import abstractmethod
 from collections.abc import ItemsView, Iterable, Iterator, KeysView, ValuesView
+from pathlib import Path
 from types import TracebackType
 from typing import (
     TYPE_CHECKING,
@@ -44,7 +45,7 @@ else:
 
 
 class _Edit:
-    filename: str
+    filename: Path
     data: Any
     force: bool
     exists: bool
@@ -54,21 +55,21 @@ class _Edit:
 
     def __init__(
         self,
-        filename: str,
+        filename: Path,
         force: bool = False,
         add_pre_commit_configuration_if_modified: bool = True,
         run_pre_commit: bool = True,
         diff: bool = False,
-    ):
+    ) -> None:
         self.filename = filename
         self.force = force
-        self.exists = os.path.exists(filename)
+        self.exists = filename.exists()
         self.add_pre_commit_configuration_if_modified = add_pre_commit_configuration_if_modified
         self.run_pre_commit = run_pre_commit
         self.diff = diff
 
         if self.exists:
-            with open(self.filename, encoding="utf-8") as file:
+            with self.filename.open(encoding="utf-8") as file:
                 self.data = self.load(file)  # nosec
         else:
             self.data = self.get_empty()
@@ -101,7 +102,7 @@ class _Edit:
 
         if exc_type is None:
             if not self.exists and not self.data:
-                os.remove(self.filename)
+                self.filename.unlink()
                 return False
 
             new_data = self.dump(self.data) if self.data else ""
@@ -114,25 +115,29 @@ class _Edit:
                         difflib.unified_diff(
                             self.original_data.splitlines(keepends=True),
                             new_data.splitlines(keepends=True),
-                        )
+                        ),
                     )
                 else:
                     # Create directory if he didn't exists
-                    dirname = os.path.dirname(self.filename)
-                    if dirname and not os.path.exists(dirname):
-                        os.makedirs(dirname)
-                    with open(self.filename, "w", encoding="utf-8") as file_:
+                    dirname = self.filename.parent
+                    if dirname and not dirname.exists():
+                        dirname.mkdir(parents=True)
+                    with self.filename.open("w", encoding="utf-8") as file_:
                         file_.write(new_data)
-                    if os.path.exists(".pre-commit-config.yaml") and self.run_pre_commit:
+                    if Path(".pre-commit-config.yaml").exists() and self.run_pre_commit:
                         try:
                             proc = run(
-                                ["pre-commit", "run", "--color=never", "--files", self.filename], False
+                                ["pre-commit", "run", "--color=never", f"--files={self.filename}"],
+                                exit_on_error=False,
                             )
                             if proc.returncode != 0 and os.environ.get("DEBUG", "false").lower() in (
                                 "true",
                                 "1",
                             ):
-                                proc = run(["pre-commit", "run", "--files", self.filename], False)
+                                proc = run(
+                                    ["pre-commit", "run", f"--files={self.filename}"],
+                                    exit_on_error=False,
+                                )
                                 if proc.returncode != 0:
                                     edit([self.filename])
                         except subprocess.TimeoutExpired as exc:
@@ -143,13 +148,13 @@ class _Edit:
     def load(self, content: io.TextIOWrapper) -> Any:
         """Load the content."""
         del content
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abstractmethod
     def dump(self, data: Any) -> str:
         """Load the content."""
         del data
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abstractmethod
     def get_empty(self) -> Any:
@@ -192,13 +197,13 @@ class _EditDict(_Edit):
     def load(self, content: io.TextIOWrapper) -> dict[str, Any]:
         """Load the content."""
         del content
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abstractmethod
     def dump(self, data: dict[str, Any]) -> str:
         """Load the content."""
         del data
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def get_empty(self) -> dict[str, Any]:
         """Get the empty data."""
@@ -273,7 +278,7 @@ class EditYAML(_EditDict, dict[str, Any]):
 
     def __init__(
         self,
-        filename: str,
+        filename: Path,
         width: int = 110,
         default_flow_style: bool = False,
         preserve_quotes: bool = True,
@@ -281,7 +286,7 @@ class EditYAML(_EditDict, dict[str, Any]):
         sequence: int = 4,
         offset: int = 2,
         **kwargs: Any,
-    ):
+    ) -> None:
         self.yaml = ruamel.yaml.YAML()
         self.yaml.default_flow_style = default_flow_style
         self.yaml.width = width
@@ -296,6 +301,7 @@ class EditYAML(_EditDict, dict[str, Any]):
 
     def dump(self, data: dict[str, Any]) -> str:
         """Load the file."""
+        del data
         out = io.StringIO()
         self.yaml.dump(self.data, out)
         return out.getvalue()
@@ -310,7 +316,8 @@ class EditYAML(_EditDict, dict[str, Any]):
                 {
                     "id": "prettier",
                     "additional_dependencies": pre_commit_config.commented_additional_dependencies(
-                        ["prettier@2.8.4"], "npm"
+                        ["prettier@2.8.4"],
+                        "npm",
                     ),
                 },
             )
@@ -385,9 +392,9 @@ class EditConfig(_EditDict):
 
     def __init__(
         self,
-        filename: str,
+        filename: Path,
         **kwargs: Any,
-    ):
+    ) -> None:
         self.updater = ConfigUpdater()
         super().__init__(filename, **kwargs)
 
@@ -446,11 +453,11 @@ class EditPreCommitConfig(EditYAML):
 
     def __init__(
         self,
-        filename: str = ".pre-commit-config.yaml",
+        filename: Path = Path(".pre-commit-config.yaml"),
         fix_files: bool = True,
         save_on_fixed_files: bool = False,
         **kwargs: Any,
-    ):
+    ) -> None:
         super().__init__(filename, **kwargs)
 
         self.repos_hooks: dict[str, _RepoHook] = {}
@@ -512,7 +519,10 @@ class EditPreCommitConfig(EditYAML):
         return result
 
     def add_commented_additional_dependencies(
-        self, hook: PreCommitHook, dependencies: list[str], type_: str
+        self,
+        hook: PreCommitHook,
+        dependencies: list[str],
+        type_: str,
     ) -> None:
         """
         Add comments to the additional dependencies.
@@ -537,13 +547,11 @@ class EditPreCommitConfig(EditYAML):
         files_joined = "\n  |".join(files)
         start = "^" if add_start_end else ""
         end = "$" if add_start_end else ""
-        result = ruamel.yaml.scalarstring.LiteralScalarString(
+        return ruamel.yaml.scalarstring.LiteralScalarString(
             f"""(?x){start}(
   {files_joined}
-){end}"""
+){end}""",
         )
-
-        return result
 
     def skip_ci(self, hook_id: str) -> None:
         """Add hook in the list that will be ignore by pre-commit.ci."""
@@ -551,7 +559,7 @@ class EditPreCommitConfig(EditYAML):
         if hook_id not in self.setdefault("ci", {}).setdefault("skip", []):
             if hasattr(self["ci"]["skip"], "ca"):
                 yaml_hooks = ruamel.yaml.comments.CommentedSeq([*self["ci"]["skip"], hook_id])
-                yaml_hooks._yaml_comment = self["ci"][  # type: ignore # pylint: disable=protected-access
+                yaml_hooks._yaml_comment = self["ci"][  # type: ignore[attr-defined] # pylint: disable=protected-access # noqa: SLF001
                     "skip"
                 ].ca
                 self["ci"]["skip"] = yaml_hooks
@@ -573,14 +581,13 @@ class EditPreCommitConfig(EditYAML):
                         if attribute_value.strip().startswith("(?x)"):
                             attribute_value = attribute_value.strip()[4:]
                         if (
-                            attribute_value.strip().startswith("(")
-                            and attribute_value.strip().endswith(")")
-                            or attribute_value.strip().startswith("(")
-                            and attribute_value.strip().endswith(")")
+                            attribute_value.strip().startswith("(") and attribute_value.strip().endswith(")")
+                        ) or (
+                            attribute_value.strip().startswith("(") and attribute_value.strip().endswith(")")
                         ):
                             files_list = attribute_value.strip()[1:-1].split("|")
                         elif attribute_value.strip().startswith("^(") and attribute_value.strip().endswith(
-                            ")$"
+                            ")$",
                         ):
                             files_list = attribute_value.strip()[2:-2].split("|")
                             add_start_end = True
@@ -588,15 +595,13 @@ class EditPreCommitConfig(EditYAML):
                             continue
 
                         hook[attribute] = self.create_files_regex(
-                            [f.strip() for f in files_list], add_start_end=add_start_end
+                            [f.strip() for f in files_list],
+                            add_start_end=add_start_end,
                         )
 
     def dump(self, data: dict[str, Any]) -> str:
         """Load the file."""
-        new_data = []
-        for key in ["ci"]:
-            if key in data:
-                new_data.append((key, data[key]))
+        new_data = [(key, data[key]) for key in ["ci"] if key in data]
 
         new_data += [e for e in data.items() if e[0] not in ("ci", "repos")]
 
@@ -621,13 +626,14 @@ class EditRenovateConfig(Edit):
     packageRules, and just before the customManagers.
     """
 
-    def __init__(self, filename: str = ".github/renovate.json5", **kwargs: Any):
+    def __init__(self, filename: Path = Path(".github/renovate.json5"), **kwargs: Any) -> None:
         super().__init__(filename, **kwargs)
 
     def add(self, data: str, test: str) -> None:
         """Add an other setting to the renovate config."""
         if test not in data:
-            raise ValueError(f"Test '{test}' not found in data '{data}'.")
+            msg = f"Test '{test}' not found in data '{data}'."
+            raise ValueError(msg)
 
         if test in self.data:
             return
@@ -668,7 +674,10 @@ class EditRenovateConfig(Edit):
         return f" {{ {data} }},\n"
 
     def add_regex_manager(
-        self, data: Union[str, list[Any], dict[str, Any]], test: str, comment: Optional[str] = None
+        self,
+        data: Union[str, list[Any], dict[str, Any]],
+        test: str,
+        comment: Optional[str] = None,
     ) -> None:
         """Add a regex manager to the Renovate config."""
         data = self._clean_data(data)
@@ -676,7 +685,8 @@ class EditRenovateConfig(Edit):
             data = f"/** {comment} */\n" + data
 
         if test not in data:
-            raise ValueError(f"Test '{test}' not found in data '{data}'.")
+            msg = f"Test '{test}' not found in data '{data}'."
+            raise ValueError(msg)
 
         if test in self.data:
             return
@@ -697,7 +707,10 @@ class EditRenovateConfig(Edit):
             self.data = self.data[:index] + f" customManagers: [{data}],\n" + self.data[index:]
 
     def add_package_rule(
-        self, data: Union[str, list[Any], dict[str, Any]], test: str, comment: Optional[str] = None
+        self,
+        data: Union[str, list[Any], dict[str, Any]],
+        test: str,
+        comment: Optional[str] = None,
     ) -> None:
         """Add a package rule to the Renovate config."""
         data = self._clean_data(data)
@@ -705,7 +718,8 @@ class EditRenovateConfig(Edit):
             data = f"/** {comment} */\n" + data
 
         if test not in data:
-            raise ValueError(f"Test '{test}' not found in data '{data}'.")
+            msg = f"Test '{test}' not found in data '{data}'."
+            raise ValueError(msg)
 
         if test in self.data:
             return
@@ -721,11 +735,12 @@ class EditRenovateConfig(Edit):
 class JSON5Item:
     """JSON5 item with comments (abstract class)."""
 
-    comment: list[str] = []
+    def __init__(self) -> None:
+        self.comment: list[str] = []
 
     def data(self) -> Any:
         """Return the data, no comments."""
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class JSON5RowAttribute(JSON5Item):
@@ -733,6 +748,7 @@ class JSON5RowAttribute(JSON5Item):
 
     def __init__(self, value: Any = None) -> None:
         self.value = value
+        super().__init__()
 
     def data(self) -> Any:
         """Return the data, no comments."""
@@ -1005,13 +1021,11 @@ class EditJSON5(_EditDict):
             while True:
                 if lines[0].endswith("*/"):
                     line = lines[0][:-2].strip()
-                    if line.startswith("* "):
-                        line = line[2:]
+                    line = line.removeprefix("* ")
                     return [*comment, line], lines[1:]
 
                 line = lines[0].strip()
-                if line.startswith("* "):
-                    line = line[2:]
+                line = line.removeprefix("* ")
                 comment.append(line)
                 lines = lines[1:]
         return [], lines
@@ -1145,7 +1159,7 @@ class EditJSON5(_EditDict):
                     lines.append(f"{indent}],")
                 elif isinstance(attribute, JSON5RowAttribute):
                     lines.append(
-                        f"{indent}{EditJSON5._dump_attribute_name(name)}: {json5.dumps(attribute.value)},"
+                        f"{indent}{EditJSON5._dump_attribute_name(name)}: {json5.dumps(attribute.value)},",
                     )
             else:
                 lines.append(f"{indent}{EditJSON5._dump_attribute_name(name)}: {json5.dumps(attribute)},")
@@ -1199,15 +1213,14 @@ class EditJSON5(_EditDict):
             lines.extend(self._dump_dict(data, "  "))
             lines.append("}")
             return "\n".join(lines)
-        elif isinstance(data, JSON5List):
+        if isinstance(data, JSON5List):
             lines = ["["]
             lines.extend(self._dump_sequence(data, "  "))
             lines.append("]")
             return "\n".join(lines)
-        else:
-            result = json5.dumps(data, indent=2)
-            assert isinstance(result, str)
-            return result
+        result = json5.dumps(data, indent=2)
+        assert isinstance(result, str)
+        return result
 
 
 class EditRenovateConfigV2(EditJSON5):
@@ -1218,7 +1231,7 @@ class EditRenovateConfigV2(EditJSON5):
     packageRules, and just before the customManagers.
     """
 
-    def __init__(self, filename: str = ".github/renovate.json5", **kwargs: Any):
+    def __init__(self, filename: Path = Path(".github/renovate.json5"), **kwargs: Any) -> None:
         super().__init__(filename, **kwargs)
 
     def regex_manager_index(self, data: dict[str, Any], comment: Optional[list[str]] = None) -> Optional[int]:
@@ -1311,9 +1324,8 @@ class EditRenovateConfigV2(EditJSON5):
                         if isinstance(value2, JSON5Item):
                             if value2.data() != value:
                                 success = False
-                        else:
-                            if value2 != value:
-                                success = False
+                        elif value2 != value:
+                            success = False
 
                 if success:
                     return index

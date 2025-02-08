@@ -5,6 +5,7 @@ import os
 import shlex
 import subprocess  # nosec
 import sys
+from pathlib import Path
 from typing import Any, TypedDict, Union, cast
 
 import yaml
@@ -46,7 +47,7 @@ def get_browser() -> str:
 
 def set_browser(browser: str) -> None:
     """Set the used browser."""
-    global _BROWSER  # pylint: disable=global-statement
+    global _BROWSER  # pylint: disable=global-statement # noqa: PLW0603
     _BROWSER = browser
 
 
@@ -60,7 +61,7 @@ def get_editor() -> str:
 
 def set_editor(editor: str) -> None:
     """Set the used editor."""
-    global _EDITOR  # pylint: disable=global-statement
+    global _EDITOR  # pylint: disable=global-statement # noqa: PLW0603
     _EDITOR = editor
 
 
@@ -81,7 +82,7 @@ _REPO_CONFIG: Union[Repo, dict[str, None]] = {}
 
 def set_repo_config(repo_config: Repo) -> None:
     """Set the repository configuration."""
-    global _REPO_CONFIG  # pylint: disable=global-statement
+    global _REPO_CONFIG  # pylint: disable=global-statement # noqa: PLW0603
     _REPO_CONFIG = repo_config
 
 
@@ -90,8 +91,9 @@ def get_repo_config() -> Repo:
     repo = cast(Repo, _REPO_CONFIG)
 
     if not repo:
-        if os.path.isfile(".repo.yaml"):
-            with open(".repo.yaml", encoding="utf-8") as file:
+        repo_path = Path(".repo.yaml")
+        if repo_path.is_file():
+            with repo_path.open(encoding="utf-8") as file:
                 repo = cast(Repo, yaml.safe_load(file))
 
         if "remote" not in repo:
@@ -120,13 +122,16 @@ def get_repo_config() -> Repo:
                     break
 
         if "dir" not in repo:
-            repo["dir"] = os.getcwd()
+            repo["dir"] = Path.cwd()
 
     return repo
 
 
 def run(
-    cmd: list[str], exit_on_error: bool = True, auto_fix_owner: bool = False, **kwargs: Any
+    cmd: list[str],
+    exit_on_error: bool = True,
+    auto_fix_owner: bool = False,
+    **kwargs: Any,
 ) -> subprocess.CompletedProcess[str]:
     """Run a command."""
     print(f"$ {shlex.join(cmd)}")
@@ -136,11 +141,11 @@ def run(
     timeout = os.environ.get("MRA_TIMEOUT")
     if timeout:
         kwargs.setdefault("timeout", int(timeout))
-    process = subprocess.run(cmd, **kwargs)  # pylint: disable=subprocess-run-check # nosec
+    process = subprocess.run(cmd, **kwargs)  # pylint: disable=subprocess-run-check # noqa: PLW1510
 
     if auto_fix_owner and process.returncode != 0:
         run(["sudo", "chown", "-R", f"{os.getuid()}:{os.getgid()}", "."], timeout=None)
-        process = subprocess.run(cmd, **kwargs)  # pylint: disable=subprocess-run-check # nosec
+        process = subprocess.run(cmd, **kwargs)  # pylint: disable=subprocess-run-check # noqa: PLW1510
 
     if process.returncode != 0:
         print(f"Error on running: {shlex.join(cmd)}")
@@ -149,24 +154,26 @@ def run(
     return process
 
 
-def edit(files: list[str]) -> None:
+def edit(files: list[Path]) -> None:
     """Edit the files in an editor."""
     for file in files:
-        print(os.path.abspath(file))
-        with open(file, "a", encoding="utf-8"):
+        print(file.resolve())
+        with file.open("a", encoding="utf-8"):
             pass
-        run([get_editor(), file])
+        run([get_editor(), str(file)])
         print("Press enter to continue")
         input()
         # Remove the file if he is empty
-        if os.path.exists(file) and os.stat(file).st_size == 0:
-            os.remove(file)
+        if file.exists() and file.stat().st_size == 0:
+            file.unlink()
 
 
 def gh(command: str, *args: str, **kwargs: Any) -> str:  # pylint: disable=invalid-name
     """Run a GitHub command."""
     return run(
-        ["gh", command, f"--repo={get_repo_config()['name']}", *args], stdout=subprocess.PIPE, **kwargs
+        ["gh", command, f"--repo={get_repo_config()['name']}", *args],
+        stdout=subprocess.PIPE,
+        **kwargs,
     ).stdout.strip()
 
 
