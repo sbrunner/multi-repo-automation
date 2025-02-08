@@ -27,7 +27,7 @@ def commented_map(
     for key, val in value.items():
         if len(val) != 1:
             if len(val) == 2:
-                val = (val[0], val[1], 0)
+                val = (val[0], val[1], 0)  # noqa: PLW2901
             _, comment, index = val
             result.yaml_add_eol_comment(comment, key)
             result.ca.items[key][2].value = comment

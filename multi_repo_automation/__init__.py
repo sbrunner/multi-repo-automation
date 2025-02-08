@@ -7,6 +7,7 @@ import shutil
 import subprocess  # nosec
 import tempfile
 import traceback
+from pathlib import Path
 from types import TracebackType
 from typing import Any, Callable, Literal, Optional, TypedDict
 
@@ -46,13 +47,13 @@ from multi_repo_automation.tools import (  # noqa
 CONFIG_FILENAME = "multi-repo-automation.yaml"
 
 if "APPDATA" in os.environ:
-    CONFIG_FOLDER = os.environ["APPDATA"]
+    CONFIG_FOLDER = Path(os.environ["APPDATA"])
 elif "XDG_CONFIG_HOME" in os.environ:
-    CONFIG_FOLDER = os.environ["XDG_CONFIG_HOME"]
+    CONFIG_FOLDER = Path(os.environ["XDG_CONFIG_HOME"])
 else:
-    CONFIG_FOLDER = os.path.expanduser("~/.config")
+    CONFIG_FOLDER = Path.home() / ".config"
 
-CONFIG_PATH = os.path.join(CONFIG_FOLDER, CONFIG_FILENAME)
+CONFIG_PATH = CONFIG_FOLDER / CONFIG_FILENAME
 
 
 _ARGUMENTS: Optional[argparse.Namespace] = None
@@ -85,11 +86,7 @@ def all_identify(repo: Optional[Repo] = None) -> set[str]:
 
 def all_filenames_identify(type_: str, repo: Optional[Repo] = None) -> list[str]:
     """Check if the repository contains a file of the given type."""
-    result = []
-    for filename in all_filenames(repo):
-        if type_ in identify.tags_from_path(filename):
-            result.append(filename)
-    return result
+    return [filename for filename in all_filenames(repo) if type_ in identify.tags_from_path(filename)]
 
 
 class Cwd:
@@ -102,7 +99,7 @@ class Cwd:
     def __init__(self, repo: Repo) -> None:
         """Initialize the context manager."""
         self.repo = repo
-        self.cwd = os.getcwd()
+        self.cwd = Path.cwd()
 
     def __enter__(self) -> None:
         """Change the cwd."""
@@ -128,17 +125,17 @@ class Cwd:
         return False
 
 
-DEFAULT_BRANCH_CACHE: dict[str, str] = {}
+DEFAULT_BRANCH_CACHE: dict[Path, str] = {}
 
 
 def get_default_branch() -> str:
     """Get the default branch name."""
-    if os.getcwd() not in DEFAULT_BRANCH_CACHE:
-        DEFAULT_BRANCH_CACHE[os.getcwd()] = run(
+    if Path.cwd() not in DEFAULT_BRANCH_CACHE:
+        DEFAULT_BRANCH_CACHE[Path.cwd()] = run(
             ["gh", "repo", "view", "--json", "defaultBranchRef", "--jq", ".defaultBranchRef.name"],
             stdout=subprocess.PIPE,
         ).stdout.strip()
-    return DEFAULT_BRANCH_CACHE[os.getcwd()]
+    return DEFAULT_BRANCH_CACHE[Path.cwd()]
 
 
 class CreateBranch:
@@ -237,7 +234,8 @@ class CreateBranch:
                 exit_on_error=False,
             )
             if process.returncode != 0:
-                raise Exception("Fail to checkout the branch")  # pylint: disable=broad-exception-raised
+                msg = "Fail to checkout the branch"
+                raise Exception(msg)  # pylint: disable=broad-exception-raised # noqa: TRY002
             run(["git", "submodule", "update"], exit_on_error=False)
         run(["git", "status"])
 
@@ -267,7 +265,7 @@ class CreateBranch:
             )
         if self.new_branch_name != self.old_branch_name:
             run(["git", "checkout", self.old_branch_name, "--"])
-        if self.has_stashed and run(["git", "stash", "pop"], False).returncode != 0:
+        if self.has_stashed and run(["git", "stash", "pop"], exit_on_error=False).returncode != 0:
             run(["git", "reset", "--hard"])
         return False
 
@@ -304,7 +302,7 @@ def create_pull_request(
                 message_file.write(f"\n{body}\n".encode())
             message_file.flush()
             try:
-                if run(["git", "commit", f"--file={message_file.name}"], False).returncode != 0:
+                if run(["git", "commit", f"--file={message_file.name}"], exit_on_error=False).returncode != 0:
                     run(["git", "add", "--all"])
                     run(["git", "commit", "--no-verify", f"--file={message_file.name}"])
             except subprocess.TimeoutExpired as exc:
@@ -312,7 +310,7 @@ def create_pull_request(
                 if (
                     run(
                         ["git", "commit", f"--file={message_file.name}"],
-                        False,
+                        exit_on_error=False,
                         env={"SKIP": "poetry-lock", **os.environ},
                     ).returncode
                     != 0
@@ -342,7 +340,7 @@ def create_pull_request(
         ],
     )
 
-    url_proc = run(cmd, False, stdout=subprocess.PIPE)
+    url_proc = run(cmd, exit_on_error=False, stdout=subprocess.PIPE)
     url = url_proc.stdout.strip()
     if url_proc.returncode != 0 or not url:
         url = f"https://github.com/{repo['name']}/pulls"
@@ -376,12 +374,12 @@ class Branch:
             shutil.rmtree(folder, ignore_errors=True)
         if self.repo.get("clean", False):
             run(["git", "clean", "-dfX"])
-            self.has_stashed = run(["git", "stash", "--all"], False).returncode == 0
+            self.has_stashed = run(["git", "stash", "--all"], exit_on_error=False).returncode == 0
         else:
-            self.has_stashed = run(["git", "stash", "--all"], False).returncode == 0
+            self.has_stashed = run(["git", "stash", "--all"], exit_on_error=False).returncode == 0
 
         if self.old_branch_name != self.branch_name:
-            run(["git", "branch", "--delete", "--force", self.branch_name], False)
+            run(["git", "branch", "--delete", "--force", self.branch_name], exit_on_error=False)
             run(["git", "fetch", f"{self.repo.get('remote', 'origin')}"])
             run(
                 [
@@ -419,7 +417,7 @@ class Branch:
 
         if self.branch_name != self.old_branch_name:
             run(["git", "checkout", self.old_branch_name])
-        if self.has_stashed and run(["git", "stash", "pop"], False).returncode != 0:
+        if self.has_stashed and run(["git", "stash", "pop"], exit_on_error=False).returncode != 0:
             run(["git", "reset", "--hard"])
         return False
 
@@ -462,16 +460,16 @@ class Commit:
             with tempfile.NamedTemporaryFile() as message_file:
                 message_file.write(f"{self.commit_message}\n".encode())
                 message_file.flush()
-                if run(["git", "commit", f"--file={message_file.name}"], False).returncode != 0:
+                if run(["git", "commit", f"--file={message_file.name}"], exit_on_error=False).returncode != 0:
                     run(["git", "add", "--all"])
                     run(["git", "commit", "--no-verify", f"--file={message_file.name}"])
         return False
 
 
-def copy_file(from_: str, to_: str, only_if_already_exists: bool = True) -> None:
+def copy_file(from_: str, to_: Path, only_if_already_exists: bool = True) -> None:
     """Copy a file."""
-    if os.path.exists(to_):
-        os.remove(to_)
+    if to_.exists():
+        to_.unlink()
         shutil.copyfile(from_, to_)
     elif not only_if_already_exists:
         shutil.copyfile(from_, to_)
@@ -488,17 +486,17 @@ def git_grep(text: str, args: Optional[list[str]] = None) -> set[str]:
     files = set()
     for line in proc.stdout.split("\n"):
         if line and not line.startswith("Binary file "):
-            print(f"{os.getcwd()}/{line}")
+            print(f"{Path.cwd()}/{line}")
             files.add(line.split(":")[0])
     return files
 
 
-def replace(filename: str, search_text: str, replace_text: str) -> None:
+def replace(filename: Path, search_text: str, replace_text: str) -> None:
     """Replace the search string by the replace string in the file."""
-    with open(filename, encoding="utf-8") as file_:
+    with filename.open(encoding="utf-8") as file_:
         content = file_.read()
     content = re.sub(search_text, replace_text, content)
-    with open(filename, "w", encoding="utf-8") as file_:
+    with filename.open("w", encoding="utf-8") as file_:
         file_.write(content)
 
 
@@ -540,9 +538,9 @@ def _add_authorization_header(headers: dict[str, str]) -> dict[str, str]:
             else _gopass("gs/ci/github/token/gopass")
         )
         headers["Authorization"] = f"Bearer {token}"
-        return headers
     except FileNotFoundError:
-        return headers
+        pass
+    return headers
 
 
 def _get_security(repo: Repo) -> Optional[security_md.Security]:
@@ -763,7 +761,7 @@ class App:
                                                 url_to_open.append(f"https://github.com/{repo['name']}/pulls")
                                             if self.one:
                                                 return
-                                    except Exception:  # pylint: disable=broad-exception-caught
+                                    except Exception:  # pylint: disable=broad-exception-caught # noqa: BLE001, PERF203
                                         print(f"Error on {repo['name']}/{base_branch}")
                                         print(traceback.format_exc())
 
@@ -790,10 +788,10 @@ def main(
     """Apply an action on all the repos."""
     config = config or {}
     user_config = {}
-    if os.path.exists(CONFIG_PATH):
-        with open(CONFIG_PATH, encoding="utf-8") as config_file:
+    if CONFIG_PATH.exists():
+        with CONFIG_PATH.open(encoding="utf-8") as config_file:
             user_config = yaml.load(config_file, Loader=yaml.SafeLoader)
-    repos_filename: str = user_config.get("repos_filename", "repos.yaml")
+    repos_filename: Path = user_config.get("repos_filename", "repos.yaml")
 
     args_parser = argparse.ArgumentParser(description=description)
     args_parser_local = args_parser.add_argument_group("local", "To apply the action locally.")
@@ -805,6 +803,7 @@ def main(
     )
     args_parser_repos.add_argument(
         "--repositories",
+        iype=Path,
         default=repos_filename,
         help="A YAML file that contains the repositories.",
     )
@@ -861,7 +860,7 @@ def main(
         add_arguments(args_parser)
 
     args = args_parser.parse_args()
-    global _ARGUMENTS  # pylint: disable=global-statement
+    global _ARGUMENTS  # pylint: disable=global-statement # noqa: PLW0603
     _ARGUMENTS = args
 
     pull_request_on_stabilization_branches = config.get(
@@ -875,7 +874,7 @@ def main(
 
     repos = []
     if not args.local:
-        with open(args.repositories, encoding="utf-8") as opened_file:
+        with args.repositories.open(encoding="utf-8") as opened_file:
             repos = yaml.load(opened_file.read(), Loader=yaml.SafeLoader)
 
     if action is None:
