@@ -925,7 +925,7 @@ class JSON5Dict(dict[str, Any], JSON5Item):
         self.children.update(other, **kwargs)
 
 
-class JSON5List(list[Any], JSON5Item):
+class JSON5List(JSON5Item, list[Any]):
     """JSON5 List with comments."""
 
     children: list[JSON5Item]
