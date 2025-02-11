@@ -803,7 +803,7 @@ def main(
     )
     args_parser_repos.add_argument(
         "--repositories",
-        iype=Path,
+        type=Path,
         default=repos_filename,
         help="A YAML file that contains the repositories.",
     )
