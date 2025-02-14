@@ -806,10 +806,16 @@ class JSON5RowAttribute(JSON5Item):
 
     def extend(self, values: Iterable[Any]) -> None:
         """Extend the list."""
-        self.extend(values)
+        self.value.extend(values)
 
     def __get_item__(self, key: Union[SupportsIndex, slice]) -> Any:
         return self.value[key]
+
+    def __str__(self) -> str:
+        return str(self.value)
+
+    def __repr__(self) -> str:
+        return repr(self.value)
 
 
 class JSON5RowDict(JSON5RowAttribute):
@@ -832,6 +838,10 @@ class JSON5RowList(JSON5RowAttribute):
     def __iter__(self) -> Iterator[Any]:
         """Iterate over the item."""
         return cast(list[Any], self.value).__iter__()
+
+    def remove(self, value: Any) -> None:
+        """Remove the value."""
+        self.value.remove(value)
 
 
 class JSON5Dict(dict[str, Any], JSON5Item):
@@ -999,6 +1009,12 @@ class JSON5List(JSON5Item, list[Any]):
     def remove(self, value: Any) -> None:
         """Remove the value."""
         self.children.remove(value)
+
+    def __str__(self) -> str:
+        return str(self.children)
+
+    def __repr__(self) -> str:
+        return repr(self.children)
 
 
 _DICT_START_RE = re.compile(r"^ +?[\"']?([a-zA-Z0-9-]+)[\"']?: {$")
@@ -1188,6 +1204,8 @@ class EditJSON5(_EditDict):
                 lines.append(f"{indent}],")
             elif isinstance(attribute, JSON5RowAttribute):
                 lines.append(f"{indent}{json5.dumps(attribute.value)},")
+            else:
+                lines.append(f"{indent}{json5.dumps(attribute)},")
 
         return lines
 
