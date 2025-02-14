@@ -1020,7 +1020,7 @@ class JSON5List(JSON5Item, list[Any]):
 _DICT_START_RE = re.compile(r"^ +?[\"']?([a-zA-Z0-9-]+)[\"']?: {$")
 _SEQ_START_RE = re.compile(r"^ +?[\"']?([a-zA-Z0-9-]+)[\"']?: \[$")
 _COMMENT_RE = re.compile(r"^ *?/\*\*? (.*) \*/$")
-_SIMPLE_RE = re.compile(r"^ +?[\"']?([a-zA-Z0-9-]+)[\"']?: (.*),$")
+_SIMPLE_RE = re.compile(r"^ +?[\"']?([$a-zA-Z0-9-]+)[\"']?: (.*),$")
 
 
 class EditJSON5(_EditDict):
@@ -1219,8 +1219,9 @@ class EditJSON5(_EditDict):
         root = JSON5Dict()
         lines = self._browse_dict(root, lines)
 
-        assert len(lines) == 1
-        assert lines[0] == ""
+        # Be sure that everything is read
+        assert len(lines) == 0 or len(lines) == 1
+        assert len(lines) == 0 or lines[0] == ""
 
         return root
 
