@@ -1,3 +1,10 @@
+[tool.ruff]
+target-version = "py39"
+line-length = 110
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
+
 [tool.poetry]
 name = "multi-repo-automation"
 version = "0.0.0"
@@ -45,16 +52,6 @@ prospector-profile-utils = "1.21.7"
 [tool.poetry.scripts]
 mra-yaml = "multi_repo_automation.commented_yaml:main"
 
-[tool.ruff]
-target-version = "py39"
-line-length = 110
-
-[tool.ruff.lint.pydocstyle]
-convention = "numpy"
-[build-system]
-requires = ["poetry-core>=1.0.0", "poetry-dynamic-versioning", "poetry-plugin-tweak-dependencies-version", "poetry-plugin-drop-python-upper-constraint"]
-build-backend = "poetry.core.masonry.api"
-
 [tool.poetry-dynamic-versioning]
 enable = true
 vcs = "git"
@@ -73,3 +70,7 @@ format-jinja = """
 
 [tool.poetry-plugin-tweak-dependencies-version]
 default = "present"
+
+[build-system]
+requires = ["poetry-core>=1.0.0", "poetry-dynamic-versioning", "poetry-plugin-tweak-dependencies-version", "poetry-plugin-drop-python-upper-constraint"]
+build-backend = "poetry.core.masonry.api"
