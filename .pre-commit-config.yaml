@@ -41,8 +41,8 @@ repos:
           - prettier-plugin-toml@2.0.2 # npm
         exclude: |-
           (?x)^(
-              \.gitattributes
-              |\.gitignore
+            \.gitattributes
+            |\.gitignore
           )$
   - repo: https://github.com/shellcheck-py/shellcheck-py
     rev: v0.10.0.1
