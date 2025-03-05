@@ -761,7 +761,7 @@ class App:
                                                 url_to_open.append(f"https://github.com/{repo['name']}/pulls")
                                             if self.one:
                                                 return
-                                    except Exception:  # pylint: disable=broad-exception-caught # noqa: BLE001, PERF203
+                                    except Exception:  # pylint: disable=broad-exception-caught # noqa: BLE001
                                         print(f"Error on {repo['name']}/{base_branch}")
                                         print(traceback.format_exc())
 
