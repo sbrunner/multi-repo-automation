@@ -513,7 +513,7 @@ def _gopass(key: str, default: Optional[str] = None) -> Optional[str]:
 
     """
     try:
-        return subprocess.check_output(["gopass", "show", key]).strip().decode()  # nosec
+        return subprocess.check_output(["gopass", "show", key]).strip().decode()  # noqa: S603,S607
     except FileNotFoundError:
         if default is not None:
             return default
@@ -761,7 +761,7 @@ class App:
                                                 url_to_open.append(f"https://github.com/{repo['name']}/pulls")
                                             if self.one:
                                                 return
-                                    except Exception:  # pylint: disable=broad-exception-caught # noqa: BLE001, PERF203
+                                    except Exception:  # pylint: disable=broad-exception-caught # noqa: BLE001
                                         print(f"Error on {repo['name']}/{base_branch}")
                                         print(traceback.format_exc())
 
