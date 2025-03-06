@@ -513,7 +513,7 @@ def _gopass(key: str, default: Optional[str] = None) -> Optional[str]:
 
     """
     try:
-        return subprocess.check_output(["gopass", "show", key]).strip().decode()  # nosec
+        return subprocess.check_output(["gopass", "show", key]).strip().decode()  # noqa: S603,S607
     except FileNotFoundError:
         if default is not None:
             return default
