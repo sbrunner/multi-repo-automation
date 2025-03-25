@@ -180,5 +180,6 @@ def gh(command: str, *args: str, **kwargs: Any) -> str:  # pylint: disable=inval
 def gh_json(command: str, fields: list[str], *args: str, **kwargs: Any) -> list[dict[str, str]]:
     """Get the JSON from a GitHub command."""
     return cast(
-        "list[dict[str, str]]", json.loads(gh(command, f"--json={','.join(fields)}", *args, **kwargs))
+        "list[dict[str, str]]",
+        json.loads(gh(command, f"--json={','.join(fields)}", *args, **kwargs)),
     )
