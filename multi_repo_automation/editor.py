@@ -297,7 +297,7 @@ class EditYAML(_EditDict, dict[str, Any]):
 
     def load(self, content: io.TextIOWrapper) -> dict[str, Any]:
         """Load the file."""
-        return cast(dict[str, Any], self.yaml.load(content))
+        return cast("dict[str, Any]", self.yaml.load(content))
 
     def dump(self, data: dict[str, Any]) -> str:
         """Load the file."""
@@ -837,7 +837,7 @@ class JSON5RowList(JSON5RowAttribute):
 
     def __iter__(self) -> Iterator[Any]:
         """Iterate over the item."""
-        return cast(list[Any], self.value).__iter__()
+        return cast("list[Any]", self.value).__iter__()
 
     def remove(self, value: Any) -> None:
         """Remove the value."""
@@ -1149,7 +1149,7 @@ class EditJSON5(_EditDict):
 
     @staticmethod
     def _dump_attribute_name(attribute_name: str) -> str:
-        dict_str = cast(str, json5.dumps({attribute_name: 0}))
+        dict_str = cast("str", json5.dumps({attribute_name: 0}))
         return dict_str[1:-4]
 
     @staticmethod

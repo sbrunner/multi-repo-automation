@@ -88,13 +88,13 @@ def set_repo_config(repo_config: Repo) -> None:
 
 def get_repo_config() -> Repo:
     """Get the repository configuration."""
-    repo = cast(Repo, _REPO_CONFIG)
+    repo = cast("Repo", _REPO_CONFIG)
 
     if not repo:
         repo_path = Path(".repo.yaml")
         if repo_path.is_file():
             with repo_path.open(encoding="utf-8") as file:
-                repo = cast(Repo, yaml.safe_load(file))
+                repo = cast("Repo", yaml.safe_load(file))
 
         if "remote" not in repo:
             remotes = run(["git", "remote", "--verbose"], stdout=subprocess.PIPE).stdout.strip().split("\n")
@@ -179,4 +179,7 @@ def gh(command: str, *args: str, **kwargs: Any) -> str:  # pylint: disable=inval
 
 def gh_json(command: str, fields: list[str], *args: str, **kwargs: Any) -> list[dict[str, str]]:
     """Get the JSON from a GitHub command."""
-    return cast(list[dict[str, str]], json.loads(gh(command, f"--json={','.join(fields)}", *args, **kwargs)))
+    return cast(
+        "list[dict[str, str]]",
+        json.loads(gh(command, f"--json={','.join(fields)}", *args, **kwargs)),
+    )
