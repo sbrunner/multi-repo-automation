@@ -182,62 +182,52 @@ class CreateBranch:
         self.force = force
         self.has_stashed = False
         self.pull_request_created = False
-        self.old_branch_name = run(
-            ["git", "rev-parse", "--abbrev-ref", "HEAD"],
-            stdout=subprocess.PIPE,
-        ).stdout.strip()
+        self.cwd = Path.cwd()
 
     def __enter__(self, *_: Any) -> None:
         """Create the branch."""
         repo = self.repo.get("remote", "origin")
         assert isinstance(repo, str)
 
-        for folder in self.repo.get("folders_to_clean") or []:
-            shutil.rmtree(folder, ignore_errors=True)
-        if self.repo.get("clean", True):
-            run(["git", "clean", "-dfX"], auto_fix_owner=True)
-            proc = run(
-                [
-                    "git",
-                    "stash",
-                    "--all",
-                    "--include-untracked",
-                    "--message=Stashed by multi repo automation",
-                ],
-                stdout=subprocess.PIPE,
-                exit_on_error=False,
-            )
-            self.has_stashed = proc.stdout.strip() != "No local changes to save"
-        else:
-            proc = run(
-                ["git", "stash"],
-                auto_fix_owner=True,
-                stdout=subprocess.PIPE,
-                encoding="utf-8",
-                env={},
-            )
-            self.has_stashed = proc.stdout.strip() != "No local changes to save"
+        old_branch_name = run(
+            ["git", "rev-parse", "--abbrev-ref", "HEAD"],
+            stdout=subprocess.PIPE,
+        ).stdout.strip()
+
+        if self.new_branch_name == old_branch_name:
+            run(["git", "checkout", self.base_branch])
+
+        print("Fetching", repo)
         run(["git", "fetch", repo])
-        if self.new_branch_name == self.old_branch_name:
-            run(["git", "reset", "--hard", f"{repo}/{self.base_branch}", "--"])
-        else:
-            run(["git", "branch", "--delete", "--force", self.new_branch_name], exit_on_error=False)
-            process = run(
-                [
-                    "git",
-                    "checkout",
-                    "-b",
-                    self.new_branch_name,
-                    f"{repo}/{self.base_branch}",
-                ],
-                auto_fix_owner=True,
-                exit_on_error=False,
-            )
-            if process.returncode != 0:
-                msg = "Fail to checkout the branch"
-                raise Exception(msg)  # pylint: disable=broad-exception-raised # noqa: TRY002
-            run(["git", "submodule", "update"], exit_on_error=False)
-        run(["git", "status"])
+        print("Removing old worktree")
+        run(["git", "worktree", "remove", "-f", self.new_branch_name], exit_on_error=False)
+        print("Deleting old branch")
+        run(["git", "branch", "--delete", "--force", self.new_branch_name], exit_on_error=False)
+        print("Adding new worktree")
+        run(
+            [
+                "git",
+                "worktree",
+                "add",
+                "-b",
+                self.new_branch_name,
+                self.new_branch_name,
+                f"{repo}/{self.base_branch}",
+            ],
+        )
+        os.chdir(self.new_branch_name)
+
+        print("Reset to the base branch")
+        run(
+            [
+                "git",
+                "reset",
+                "--hard",
+                f"{repo}/{self.base_branch}",
+            ],
+        )
+        print("Updating submodules")
+        run(["git", "submodule", "update"], exit_on_error=False)
 
     def __exit__(
         self,
@@ -263,10 +253,8 @@ class CreateBranch:
                 base_branch=self.base_branch,
                 body=self.pull_request_body,
             )
-        if self.new_branch_name != self.old_branch_name:
-            run(["git", "checkout", self.old_branch_name, "--"])
-        if self.has_stashed and run(["git", "stash", "pop"], exit_on_error=False).returncode != 0:
-            run(["git", "reset", "--hard"])
+        os.chdir(self.cwd)
+        run(["git", "worktree", "remove", "-f", self.new_branch_name])
         return False
 
 
