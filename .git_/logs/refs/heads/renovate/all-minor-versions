@@ -1,0 +1,2 @@
+0000000000000000000000000000000000000000 b95d5fc2e49a3f4d743e622cfa69c93d421a7c30 Stéphane Brunner <stephane.brunner@camptocamp.com> 1712157687 +0200	branch: Created from refs/remotes/origin/renovate/all-minor-versions
+b95d5fc2e49a3f4d743e622cfa69c93d421a7c30 44337c277de5d2c85280af8f0f56774852477894 Stéphane Brunner <stephane.brunner@camptocamp.com> 1712157885 +0200	commit: Fix pydocstyle

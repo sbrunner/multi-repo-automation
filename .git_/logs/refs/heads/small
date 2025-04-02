@@ -1,0 +1,52 @@
+0000000000000000000000000000000000000000 8c9f32c8099978264b50be477e822ab18b94e65b Stéphane Brunner <stephane.brunner@camptocamp.com> 1679589900 +0100	branch: Created from HEAD
+8c9f32c8099978264b50be477e822ab18b94e65b 886af7c6179657ff84a45ccd26dad5d4edbc007c Stéphane Brunner <stephane.brunner@camptocamp.com> 1679589933 +0100	commit: Don't run pre-commit when it's not needed
+886af7c6179657ff84a45ccd26dad5d4edbc007c 37de5e018711f6ac943467514c347518f2917454 Stéphane Brunner <stephane.brunner@camptocamp.com> 1679589967 +0100	commit: Don't break the comment's in the YAML files
+37de5e018711f6ac943467514c347518f2917454 974b5afb72c08f9d0b4b876ed3c0f65ab387e5aa Stéphane Brunner <stephane.brunner@camptocamp.com> 1679669123 +0100	commit: Add missing EditConfig
+974b5afb72c08f9d0b4b876ed3c0f65ab387e5aa d75a3061de943e0cadc2a3d036f1ed7f41fafa36 Stéphane Brunner <stephane.brunner@camptocamp.com> 1679669155 +0100	commit: Set the right upstream branch
+d75a3061de943e0cadc2a3d036f1ed7f41fafa36 664b339b12c748f282b7a1f53fbc0cfbdfa580fe Stéphane Brunner <stephane.brunner@camptocamp.com> 1679669224 +0100	commit: Remove dupplicated code between Edit and _EditDict
+664b339b12c748f282b7a1f53fbc0cfbdfa580fe ed80873a5ca26980cae6af6bf2dc61f617f4a4f0 Stéphane Brunner <stephane.brunner@camptocamp.com> 1679676197 +0100	commit: f1
+ed80873a5ca26980cae6af6bf2dc61f617f4a4f0 104a0e75ecc4077163cccd5143fd1c23fd10417b Stéphane Brunner <stephane.brunner@camptocamp.com> 1679676217 +0100	commit: f2
+104a0e75ecc4077163cccd5143fd1c23fd10417b b512dd6bd0a0d0c6fb21bf7b85b7b0d9f1bef268 Stéphane Brunner <stephane.brunner@camptocamp.com> 1679676237 +0100	rebase (finish): refs/heads/small onto 49af401c2732c3b7fa83913635895170374eaf81
+b512dd6bd0a0d0c6fb21bf7b85b7b0d9f1bef268 f99ca4bea0467ac0bad5a8757b1ddab84343bb79 Stéphane Brunner <stephane.brunner@camptocamp.com> 1679676333 +0100	rebase (finish): refs/heads/small onto 49af401c2732c3b7fa83913635895170374eaf81
+f99ca4bea0467ac0bad5a8757b1ddab84343bb79 5225ab03cff775982e1f18c0862374c35aa96ac0 Stéphane Brunner <stephane.brunner@camptocamp.com> 1679679809 +0100	commit: Add support of Python package
+5225ab03cff775982e1f18c0862374c35aa96ac0 665ae5186789b4f36fdae01f5bd3853238ac2393 Stéphane Brunner <stephane.brunner@camptocamp.com> 1680445837 +0200	commit: Remove stange fix owner
+665ae5186789b4f36fdae01f5bd3853238ac2393 375799f3631367d3f8dfc2a7c463d8066c5c213b Stéphane Brunner <stephane.brunner@camptocamp.com> 1680445979 +0200	commit: Don't exit on suppooces error on git grep
+375799f3631367d3f8dfc2a7c463d8066c5c213b 1c7d01ed0a4a01fdaa4d73e27293baff3f9f2b7c Stéphane Brunner <stephane.brunner@camptocamp.com> 1680446023 +0200	commit: Start with empty data on starting with no file
+1c7d01ed0a4a01fdaa4d73e27293baff3f9f2b7c 016364bbd113688bd69f2205852f6893ab63994b Stéphane Brunner <stephane.brunner@camptocamp.com> 1680446048 +0200	commit (amend): Start with empty data on starting with no file
+016364bbd113688bd69f2205852f6893ab63994b 2d97f24f83c6246705c68c648053b554358e3778 Stéphane Brunner <stephane.brunner@camptocamp.com> 1680446076 +0200	commit: Add a prompt before the executated commands
+2d97f24f83c6246705c68c648053b554358e3778 99ed0dc314052704e92ec45f40254746fb6efd08 Stéphane Brunner <stephane.brunner@camptocamp.com> 1680446476 +0200	rebase (finish): refs/heads/small onto 50ebd8d7ccb726be095c3cd66c046ce607d8d6d8
+99ed0dc314052704e92ec45f40254746fb6efd08 838920e6ca69b7b2bd875060046249137b4e6574 Stéphane Brunner <stephane.brunner@camptocamp.com> 1680446730 +0200	rebase (finish): refs/heads/small onto 838920e6ca69b7b2bd875060046249137b4e6574
+838920e6ca69b7b2bd875060046249137b4e6574 f0d74ea899baa3dd62d3aa7700b47aa87879050d Stéphane Brunner <stephane.brunner@camptocamp.com> 1680537117 +0200	commit: Add update stabilization branches command
+f0d74ea899baa3dd62d3aa7700b47aa87879050d 17a65c5fb125f6170dfa1332536a3ba645b494d6 Stéphane Brunner <stephane.brunner@camptocamp.com> 1680537237 +0200	commit (amend): Add update stabilization branches command
+17a65c5fb125f6170dfa1332536a3ba645b494d6 088c30cb4df31e30816ead40bcbd94a9376a9786 Stéphane Brunner <stephane.brunner@camptocamp.com> 1680539263 +0200	commit (amend): Add update stabilization branches command
+088c30cb4df31e30816ead40bcbd94a9376a9786 6c04c38d4841a99aa74b96f4a48b1e040de69c25 Stéphane Brunner <stephane.brunner@camptocamp.com> 1680539779 +0200	commit (amend): Add update stabilization branches command
+6c04c38d4841a99aa74b96f4a48b1e040de69c25 fb37318bb41ba24711f744763673d5386769a4ef Stéphane Brunner <stephane.brunner@camptocamp.com> 1680540225 +0200	commit (amend): Add update stabilization branches command
+fb37318bb41ba24711f744763673d5386769a4ef 634257de4e7ffb7cf30c5a0e5bac2af2343431c4 Stéphane Brunner <stephane.brunner@camptocamp.com> 1680540832 +0200	commit (amend): Add update stabilization branches command
+634257de4e7ffb7cf30c5a0e5bac2af2343431c4 7bd2adbd4cf2ef139581d8ac8b618ef4c4430530 Stéphane Brunner <stephane.brunner@camptocamp.com> 1680542552 +0200	commit (amend): Add update stabilization branches command
+7bd2adbd4cf2ef139581d8ac8b618ef4c4430530 babc85cfd715e06677239293b1441620ed8576b2 Stéphane Brunner <stephane.brunner@camptocamp.com> 1680542701 +0200	commit (amend): Add update stabilization branches command
+babc85cfd715e06677239293b1441620ed8576b2 274c2392b2211c2f33b24608e1cc78cb39411983 Stéphane Brunner <stephane.brunner@camptocamp.com> 1680542817 +0200	commit (amend): Add update stabilization branches command
+274c2392b2211c2f33b24608e1cc78cb39411983 72a6db3c16130f6761616578cda8cd492fd0d80e Stéphane Brunner <stephane.brunner@camptocamp.com> 1680878039 +0200	commit: Add stash message
+72a6db3c16130f6761616578cda8cd492fd0d80e 3650160c686c9d2de74dd5d6379977ae9965c995 Stéphane Brunner <stephane.brunner@camptocamp.com> 1680878100 +0200	commit: Remove unneeded mypy plugin
+3650160c686c9d2de74dd5d6379977ae9965c995 e31a947a1f121b33d02dac848618c1e7cb814141 Stéphane Brunner <stephane.brunner@camptocamp.com> 1680886250 +0200	commit: Fix mypy error
+e31a947a1f121b33d02dac848618c1e7cb814141 f1733e9ecd9305a046d445789b69eec496fc4268 Stéphane Brunner <stephane.brunner@camptocamp.com> 1680886468 +0200	commit (amend): Fix mypy error
+f1733e9ecd9305a046d445789b69eec496fc4268 bb48f804e85f6697aa6d8eb96b9c9b50b10704b7 Stéphane Brunner <stephane.brunner@camptocamp.com> 1681286228 +0200	commit: Automatically fix the owner
+bb48f804e85f6697aa6d8eb96b9c9b50b10704b7 0c7e82b4af5e4e24fd9f78e4207331206f3d7d89 Stéphane Brunner <stephane.brunner@camptocamp.com> 1681286292 +0200	commit: Be able to configure the remote
+0c7e82b4af5e4e24fd9f78e4207331206f3d7d89 079d8d35135cb3c2971d500385daac88e51ec14d Stéphane Brunner <stephane.brunner@camptocamp.com> 1681286339 +0200	commit: Fix the branch checkout
+079d8d35135cb3c2971d500385daac88e51ec14d 714edf49482be218632b79c2b8fcf994908d65b7 Stéphane Brunner <stephane.brunner@camptocamp.com> 1681287335 +0200	commit: Extract get_stabilization_branches
+714edf49482be218632b79c2b8fcf994908d65b7 4eecba3c23c1250dfd2596ac5d508bc64fed1f41 Stéphane Brunner <stephane.brunner@camptocamp.com> 1681287772 +0200	commit (amend): Extract get_stabilization_branches
+4eecba3c23c1250dfd2596ac5d508bc64fed1f41 8eef025386b9e7a81b430410528b94f329da62b9 Stéphane Brunner <stephane.brunner@camptocamp.com> 1681290965 +0200	commit: Fix fetch
+8eef025386b9e7a81b430410528b94f329da62b9 115fb60cb9183fcf82bd9c30d7c492e268244306 Stéphane Brunner <stephane.brunner@camptocamp.com> 1681741014 +0200	commit: Add pre-commit an Renovate editor
+115fb60cb9183fcf82bd9c30d7c492e268244306 cbddae2d44a988829b9e7078da77c57f8f605ec5 Stéphane Brunner <stephane.brunner@camptocamp.com> 1681741362 +0200	commit (amend): Add pre-commit an Renovate editor
+cbddae2d44a988829b9e7078da77c57f8f605ec5 c0f7138fce04c0ccbc89fbaeaf4e1e054375d694 Stéphane Brunner <stephane.brunner@camptocamp.com> 1681978001 +0200	commit: Some fix in renovate and pre-commint config editor
+c0f7138fce04c0ccbc89fbaeaf4e1e054375d694 e408c9f75920549609a16986a43ffa16a9426051 Stéphane Brunner <stephane.brunner@camptocamp.com> 1681988895 +0200	commit: Automatically build a repo configuration
+e408c9f75920549609a16986a43ffa16a9426051 68043c0e7028d674020534397cbdf67867d3e429 Stéphane Brunner <stephane.brunner@camptocamp.com> 1681988935 +0200	commit: Simplify gh commands
+68043c0e7028d674020534397cbdf67867d3e429 fa58f2df5e75e3bd3ec1627a946ba3d116374632 Stéphane Brunner <stephane.brunner@camptocamp.com> 1681988972 +0200	commit: f
+fa58f2df5e75e3bd3ec1627a946ba3d116374632 47a799abd8602ad71dff0cd6243bd11f47a7d523 Stéphane Brunner <stephane.brunner@camptocamp.com> 1681989010 +0200	rebase (finish): refs/heads/small onto 0da0354ec6cdec6eecbb179cdd6288674d158167
+47a799abd8602ad71dff0cd6243bd11f47a7d523 73faf4420d1c165ad9571a87660c3a1b58d47ed2 Stéphane Brunner <stephane.brunner@camptocamp.com> 1681993915 +0200	commit (amend): Some fix in renovate and pre-commit configuration editor
+73faf4420d1c165ad9571a87660c3a1b58d47ed2 8cd25662e7b9eeffb7a6e54900101c372105ecdf Stéphane Brunner <stephane.brunner@camptocamp.com> 1681994018 +0200	commit (amend): Some fix in renovate and pre-commit configuration editor
+8cd25662e7b9eeffb7a6e54900101c372105ecdf 427e1652736342555f5229e9694e6a6eea1cb973 Stéphane Brunner <stephane.brunner@camptocamp.com> 1681994204 +0200	commit (amend): Some fix in renovate and pre-commit configuration editor
+427e1652736342555f5229e9694e6a6eea1cb973 4a900184321abccc972a7972fa71a026c4c96977 Stéphane Brunner <stephane.brunner@camptocamp.com> 1681994490 +0200	commit (amend): Some fix in renovate and pre-commit configuration editor
+4a900184321abccc972a7972fa71a026c4c96977 e0e1f720fe0b8cc2399f396d9161ef0ed3ad7bee Stéphane Brunner <stephane.brunner@camptocamp.com> 1681997203 +0200	commit (amend): Some fix in renovate and pre-commit configuration editor
+e0e1f720fe0b8cc2399f396d9161ef0ed3ad7bee 3a5600ba775eb6bb8c36087dae58d7957efce7d0 Stéphane Brunner <stephane.brunner@camptocamp.com> 1681998408 +0200	commit (amend): Some fix in renovate and pre-commit configuration editor
+3a5600ba775eb6bb8c36087dae58d7957efce7d0 039a73fabbb6356010accbe1d9c5bda449b626cd Stéphane Brunner <stephane.brunner@camptocamp.com> 1681998591 +0200	commit (amend): Some fix in renovate and pre-commit configuration editor
+039a73fabbb6356010accbe1d9c5bda449b626cd 6ce28615078cf259e6ed5c34134bf1305b5ebac9 Stéphane Brunner <stephane.brunner@camptocamp.com> 1682006781 +0200	commit (amend): Some fix in renovate and pre-commit configuration editor

@@ -1,0 +1,5 @@
+0000000000000000000000000000000000000000 af3f24b49c461e8c4144643b8a70c6ddd29d3838 Stéphane Brunner <stephane.brunner@camptocamp.com> 1688044279 +0200	branch: Created from HEAD
+af3f24b49c461e8c4144643b8a70c6ddd29d3838 73ce206f7b77fb305a458b254f7c7782e942a9d7 Stéphane Brunner <stephane.brunner@camptocamp.com> 1688044310 +0200	commit: Be able to add additional_dependencies in pre-commit-config
+73ce206f7b77fb305a458b254f7c7782e942a9d7 cf7f74451d1c5f215d3ec1234dbd1103b50bafae Stéphane Brunner <stephane.brunner@camptocamp.com> 1688045060 +0200	commit (amend): Be able to add additional_dependencies in pre-commit-config
+cf7f74451d1c5f215d3ec1234dbd1103b50bafae e47d143ceab2c2b9326806503b74e95384ecd076 Stéphane Brunner <stephane.brunner@camptocamp.com> 1689672806 +0200	rebase (finish): refs/heads/add onto e47d143ceab2c2b9326806503b74e95384ecd076
+e47d143ceab2c2b9326806503b74e95384ecd076 b13ef3398a2a1a63babd53421e0f8bb407a1affa Stéphane Brunner <stephane.brunner@camptocamp.com> 1689672879 +0200	commit: Fix infinite loop

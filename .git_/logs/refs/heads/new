@@ -1,0 +1,42 @@
+0000000000000000000000000000000000000000 a12e2ad923d4d7182733274e08179abb5f1c45e6 Stéphane Brunner <stephane.brunner@camptocamp.com> 1695805719 +0200	branch: Created from HEAD
+a12e2ad923d4d7182733274e08179abb5f1c45e6 36b961ef0ae388de857e046e3cf499aee9eec772 Stéphane Brunner <stephane.brunner@camptocamp.com> 1695806288 +0200	commit: Add folder_scalar_string
+36b961ef0ae388de857e046e3cf499aee9eec772 d37dca7d392e8d7cdc55f9595fb5a258f4cca3ec Stéphane Brunner <stephane.brunner@camptocamp.com> 1695806323 +0200	commit: Canonicalize pre-commit config
+d37dca7d392e8d7cdc55f9595fb5a258f4cca3ec 43705685622e52e6ed12a7745b1a78f3519d9cab Stéphane Brunner <stephane.brunner@camptocamp.com> 1695806505 +0200	commit: Generate error when the input can introduce adding at each run
+43705685622e52e6ed12a7745b1a78f3519d9cab 33995538cdf997e29ffa18fa5937bd1371285112 Stéphane Brunner <stephane.brunner@camptocamp.com> 1695814204 +0200	commit: f
+33995538cdf997e29ffa18fa5937bd1371285112 dd733f71f3592a7452323f413864ef66244902b6 Stéphane Brunner <stephane.brunner@camptocamp.com> 1695814217 +0200	rebase (finish): refs/heads/new onto a12e2ad923d4d7182733274e08179abb5f1c45e6
+dd733f71f3592a7452323f413864ef66244902b6 0d42a34a43ab543655a2c2ce0c720807f799d38b Stéphane Brunner <stephane.brunner@camptocamp.com> 1695827179 +0200	commit: f
+0d42a34a43ab543655a2c2ce0c720807f799d38b 309ac36f60c84f9e1a679160b3cf06620202e66b Stéphane Brunner <stephane.brunner@camptocamp.com> 1695827196 +0200	rebase (finish): refs/heads/new onto a12e2ad923d4d7182733274e08179abb5f1c45e6
+309ac36f60c84f9e1a679160b3cf06620202e66b 39d6f4a6221a0558e7d820917fde2cba333f91af Stéphane Brunner <stephane.brunner@camptocamp.com> 1696942022 +0200	commit: Get stabilization from SECURITY.md
+39d6f4a6221a0558e7d820917fde2cba333f91af 477763ecae01c0e77407deea316b76453a1b35c4 Stéphane Brunner <stephane.brunner@camptocamp.com> 1696942452 +0200	commit (amend): Get stabilization from SECURITY.md
+477763ecae01c0e77407deea316b76453a1b35c4 e4eb6eccb5a7fed234128b6528d51b8da18beccf Stéphane Brunner <stephane.brunner@camptocamp.com> 1696944582 +0200	commit (amend): Get stabilization from SECURITY.md
+e4eb6eccb5a7fed234128b6528d51b8da18beccf dff248dd9e624542f4e3fbdeabcc23aa2d193785 Stéphane Brunner <stephane.brunner@camptocamp.com> 1696950411 +0200	rebase (continue) (finish): refs/heads/new onto d6349b4a8f5cdae1f4261df593c5fa8ff4587d83
+dff248dd9e624542f4e3fbdeabcc23aa2d193785 ffff769079f07fb770a4d70b6cd9e53f36363542 Stéphane Brunner <stephane.brunner@camptocamp.com> 1697049042 +0200	commit: Get the default branch with the gh command
+ffff769079f07fb770a4d70b6cd9e53f36363542 6a76c50ac2f0060d44be5e6d79f4674164f91e1c Stéphane Brunner <stephane.brunner@camptocamp.com> 1697104677 +0200	commit: Fix ci skip endlines
+6a76c50ac2f0060d44be5e6d79f4674164f91e1c f3f3403aba759b76e522504fbbb39a9cd5fb0522 Stéphane Brunner <stephane.brunner@camptocamp.com> 1697104710 +0200	commit: Better dump
+f3f3403aba759b76e522504fbbb39a9cd5fb0522 e45298cff13dc09d8b2b024c372ca9f82eee52ca Stéphane Brunner <stephane.brunner@camptocamp.com> 1697104725 +0200	commit: Add comments
+e45298cff13dc09d8b2b024c372ca9f82eee52ca f408213ea6f5c1c62b26c4d39038229457857f8f Stéphane Brunner <stephane.brunner@camptocamp.com> 1697104746 +0200	commit: Add Json5 parser
+f408213ea6f5c1c62b26c4d39038229457857f8f 22e6eabba3b99b0598ca681a384edd3700d01739 Stéphane Brunner <stephane.brunner@camptocamp.com> 1697179337 +0200	commit (amend): Add JSON5 parser
+22e6eabba3b99b0598ca681a384edd3700d01739 4a635031a67da3aca5054aea9d1d21a3ce26d4b9 Stéphane Brunner <stephane.brunner@camptocamp.com> 1697192779 +0200	commit (amend): Add JSON5 parser
+4a635031a67da3aca5054aea9d1d21a3ce26d4b9 69452e5172dd19e084382f80ed3d651754cde0de Stéphane Brunner <stephane.brunner@camptocamp.com> 1697193113 +0200	commit (amend): Add JSON5 parser
+69452e5172dd19e084382f80ed3d651754cde0de 4cf5d67f0d65be17796047f6e888a7dcb1e66dfa Stéphane Brunner <stephane.brunner@camptocamp.com> 1697198659 +0200	commit (amend): Add JSON5 parser
+4cf5d67f0d65be17796047f6e888a7dcb1e66dfa 3685118db7cd83b9c4ec5da3cb6f67ad8aedceeb Stéphane Brunner <stephane.brunner@camptocamp.com> 1697198842 +0200	commit (amend): Add JSON5 parser
+3685118db7cd83b9c4ec5da3cb6f67ad8aedceeb 16e95ce68bfaf37915ada71d38f1623d089981d4 Stéphane Brunner <stephane.brunner@camptocamp.com> 1697209325 +0200	commit (amend): Add JSON5 parser
+16e95ce68bfaf37915ada71d38f1623d089981d4 5d83fc409b9244a85c49352cff99adefccf7a8e0 Stéphane Brunner <stephane.brunner@camptocamp.com> 1697210858 +0200	commit (amend): Add JSON5 parser
+5d83fc409b9244a85c49352cff99adefccf7a8e0 da85660c11c16ae1d21cf02294eedea1e0bc66f7 Stéphane Brunner <stephane.brunner@camptocamp.com> 1697211292 +0200	commit (amend): Add JSON5 parser
+da85660c11c16ae1d21cf02294eedea1e0bc66f7 d5f659a0cdc07a6abef76c3a67c9184fc1ab534a Stéphane Brunner <stephane.brunner@camptocamp.com> 1697212000 +0200	commit (amend): Add JSON5 parser
+d5f659a0cdc07a6abef76c3a67c9184fc1ab534a 48dfae27ca90f32bf6dd4979469ded39f1e8a346 Stéphane Brunner <stephane.brunner@camptocamp.com> 1697214203 +0200	commit (amend): Add JSON5 parser
+48dfae27ca90f32bf6dd4979469ded39f1e8a346 6e8f91717d320f153d1f7497f5a4f86662dff325 Stéphane Brunner <stephane.brunner@camptocamp.com> 1698660348 +0100	commit: Add main branch cache
+6e8f91717d320f153d1f7497f5a4f86662dff325 62b286d9e5701c821bddf1cc9d4519984d680bda Stéphane Brunner <stephane.brunner@camptocamp.com> 1698660552 +0100	commit: Some checkout fiies
+62b286d9e5701c821bddf1cc9d4519984d680bda 48c6fbb5ef7f15eeef6c5e8d620d3426c2ef9f80 Stéphane Brunner <stephane.brunner@camptocamp.com> 1698660598 +0100	commit (amend): Some checkout fiies
+48c6fbb5ef7f15eeef6c5e8d620d3426c2ef9f80 d3de2fe198b3b798537e15cfb069fa6b74cec837 Stéphane Brunner <stephane.brunner@camptocamp.com> 1698831604 +0100	commit (amend): Some checkout files
+d3de2fe198b3b798537e15cfb069fa6b74cec837 47fcb09f644bf40cf7e77ffa1beba81cffa7e264 Stéphane Brunner <stephane.brunner@camptocamp.com> 1700747366 +0100	commit: Fix for raw attributes
+47fcb09f644bf40cf7e77ffa1beba81cffa7e264 d9c7daff945a66bbfd6974dea385d4825af5eade Stéphane Brunner <stephane.brunner@camptocamp.com> 1700747408 +0100	commit: Better get stabilisation branches versions
+d9c7daff945a66bbfd6974dea385d4825af5eade b5abcf17c4b9fd395350c58cbd84fd86c53f50dd Stéphane Brunner <stephane.brunner@camptocamp.com> 1700747413 +0100	commit (amend): Better get stabilization branches versions
+b5abcf17c4b9fd395350c58cbd84fd86c53f50dd 3ce6c39e683c176fa71db8aa3fc9a88406d72b82 Stéphane Brunner <stephane.brunner@camptocamp.com> 1700747434 +0100	commit: Some little fix
+3ce6c39e683c176fa71db8aa3fc9a88406d72b82 66ef5f4b364ed5c7e521d37bfb864316dae8a010 Stéphane Brunner <stephane.brunner@camptocamp.com> 1700747837 +0100	rebase (finish): refs/heads/new onto 46953f5cc845c60822bcd0266c09e5bdd663dc8e
+66ef5f4b364ed5c7e521d37bfb864316dae8a010 59afc25f36bd07451d7f379b1785fc67dd40d7cd Stéphane Brunner <stephane.brunner@camptocamp.com> 1700748363 +0100	commit: Fix removed ruamel.yaml version
+59afc25f36bd07451d7f379b1785fc67dd40d7cd 10680dd0d1cab101592a7f71b4851ad52ed542cf Stéphane Brunner <stephane.brunner@camptocamp.com> 1700749441 +0100	commit: fix-93dcd60
+10680dd0d1cab101592a7f71b4851ad52ed542cf 19aef70b822c30cade5d787f853bc58a485600bf Stéphane Brunner <stephane.brunner@camptocamp.com> 1700749667 +0100	commit (amend): fix-93dcd60
+19aef70b822c30cade5d787f853bc58a485600bf 889fb115052ad71bee84c3e6f017a99cabdba08d Stéphane Brunner <stephane.brunner@camptocamp.com> 1700749685 +0100	rebase (finish): refs/heads/new onto 46953f5cc845c60822bcd0266c09e5bdd663dc8e
+889fb115052ad71bee84c3e6f017a99cabdba08d 84b7cd43a183b6ffca5aa17ec6c3d9190399c29a Stéphane Brunner <stephane.brunner@camptocamp.com> 1700749687 +0100	commit (amend): Fix removed ruamel.yaml version
+84b7cd43a183b6ffca5aa17ec6c3d9190399c29a 67d017df518a0ec7d492c180d382f064b6dfd5e6 Stéphane Brunner <stephane.brunner@camptocamp.com> 1700753289 +0100	rebase (skip) (finish): refs/heads/new onto 46953f5cc845c60822bcd0266c09e5bdd663dc8e

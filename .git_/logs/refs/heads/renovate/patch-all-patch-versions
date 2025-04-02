@@ -1,0 +1,2 @@
+0000000000000000000000000000000000000000 4f8edc19f4b0864402de462828bc440d44715bd2 Stéphane Brunner <stephane.brunner@camptocamp.com> 1686054002 +0200	branch: Created from refs/remotes/origin/renovate/patch-all-patch-versions
+4f8edc19f4b0864402de462828bc440d44715bd2 127e732b4bd95c86daf6388fc1e69f1ccb7ec1f8 Stéphane Brunner <stephane.brunner@camptocamp.com> 1686054055 +0200	commit: Remove no more needed type: ignore

@@ -1,0 +1,2 @@
+0000000000000000000000000000000000000000 67787a7884abc6cbf635e4f80ecb613043ce3ffd Stéphane Brunner <stephane.brunner@camptocamp.com> 1714652400 +0200	branch: Created from HEAD
+67787a7884abc6cbf635e4f80ecb613043ce3ffd e329e5cc2bec986389220134c39319b79c3371c5 Stéphane Brunner <stephane.brunner@camptocamp.com> 1714652424 +0200	commit: Fix for inexisting regexManagers

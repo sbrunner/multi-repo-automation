@@ -1,0 +1,53 @@
+[core]
+	repositoryformatversion = 0
+	filemode = true
+	bare = false
+	logallrefupdates = true
+[remote "origin"]
+	url = git@github.com:sbrunner/multi-repo-automation.git
+	fetch = +refs/heads/*:refs/remotes/origin/*
+[branch "small"]
+	remote = origin
+	merge = refs/heads/small
+[branch "master"]
+	remote = origin
+	merge = refs/heads/master
+[branch "renovate-config"]
+	remote = origin
+	merge = refs/heads/renovate-config
+[branch "pre-commit"]
+	remote = origin
+	merge = refs/heads/master
+[branch "renovate/lock-file-maintenance"]
+	remote = origin
+	merge = refs/heads/renovate/lock-file-maintenance
+[branch "renovate/patch-all-patch-versions"]
+	remote = origin
+	merge = refs/heads/renovate/patch-all-patch-versions
+[branch "update-ubuntu-master"]
+	remote = origin
+	merge = refs/heads/master
+[branch "fix-repo"]
+	remote = origin
+	merge = refs/heads/master
+[branch "prospector-profile"]
+	remote = origin
+	merge = refs/heads/prospector-profile
+[branch "update-python"]
+	remote = origin
+	merge = refs/heads/update-python
+[branch "upgrade-python"]
+	remote = origin
+	merge = refs/heads/master
+[branch "fix-changelog"]
+	remote = origin
+	merge = refs/heads/master
+[branch "renovate/all-minor-versions"]
+	remote = origin
+	merge = refs/heads/renovate/all-minor-versions
+[branch "renovate/ci-dependencies"]
+	remote = origin
+	merge = refs/heads/renovate/ci-dependencies
+[branch "c2cciutils-upgrade"]
+	remote = origin
+	merge = refs/heads/master

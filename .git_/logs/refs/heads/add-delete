@@ -1,0 +1,4 @@
+0000000000000000000000000000000000000000 5709803f1a77e8f599ba21979d6cea462c2c0efd Stéphane Brunner <stephane.brunner@camptocamp.com> 1705399935 +0100	branch: Created from HEAD
+5709803f1a77e8f599ba21979d6cea462c2c0efd 68c87778f29cf9f2473752a6078585cf6dd29f67 Stéphane Brunner <stephane.brunner@camptocamp.com> 1705583681 +0100	commit: Add remove function in Renovate editor
+68c87778f29cf9f2473752a6078585cf6dd29f67 2618b8e57a377eded1989d9e9f471efc5ebcddcb Stéphane Brunner <stephane.brunner@camptocamp.com> 1705583714 +0100	rebase (finish): refs/heads/add-delete onto 4aa5753ee9391c10de70f24b02ad8574883ca9fe
+2618b8e57a377eded1989d9e9f471efc5ebcddcb 0fba6b4b82f9909f1e14c54557de56c366d4fa26 Stéphane Brunner <stephane.brunner@camptocamp.com> 1705583997 +0100	commit (amend): Add remove function in Renovate editor

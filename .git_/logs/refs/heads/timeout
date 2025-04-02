@@ -1,0 +1,3 @@
+0000000000000000000000000000000000000000 4e72674bfebce867f922d57c465dc7396b690947 Stéphane Brunner <stephane.brunner@camptocamp.com> 1692865451 +0200	branch: Created from HEAD
+4e72674bfebce867f922d57c465dc7396b690947 ef90bfbe2d932590ea86aa6e7f282cf6183c9f8c Stéphane Brunner <stephane.brunner@camptocamp.com> 1692865486 +0200	commit: Add optional timeout in the external commands
+ef90bfbe2d932590ea86aa6e7f282cf6183c9f8c 6d4ccc1f1018918f9a0d2df4482d39eeb533bbb8 Stéphane Brunner <stephane.brunner@camptocamp.com> 1692865690 +0200	commit (amend): Add optional timeout in the external commands

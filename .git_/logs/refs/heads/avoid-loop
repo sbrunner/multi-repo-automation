@@ -1,0 +1,2 @@
+0000000000000000000000000000000000000000 15a81b69c60e1299255fa1728e095eb6cea004b8 Stéphane Brunner <stephane.brunner@camptocamp.com> 1685003345 +0200	branch: Created from HEAD
+15a81b69c60e1299255fa1728e095eb6cea004b8 39b929090da126b7512c1dec44b055b6a01a33b5 Stéphane Brunner <stephane.brunner@camptocamp.com> 1685003372 +0200	commit: Avoid look on editint .pre-commit-config.yaml
