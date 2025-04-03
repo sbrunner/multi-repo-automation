@@ -52,6 +52,8 @@ class _Edit:
     add_pre_commit_configuration_if_modified: bool
     original_data: str
     run_pre_commit: bool
+    pre_commit_hooks: list[str]
+    skip_pre_commit_hooks: list[str]
 
     def __init__(
         self,
@@ -59,6 +61,8 @@ class _Edit:
         force: bool = False,
         add_pre_commit_configuration_if_modified: bool = True,
         run_pre_commit: bool = True,
+        pre_commit_hooks: Optional[list[str]] = None,
+        skip_pre_commit_hooks: Optional[list[str]] = None,
         diff: bool = False,
     ) -> None:
         self.filename = filename
@@ -66,6 +70,8 @@ class _Edit:
         self.exists = filename.exists()
         self.add_pre_commit_configuration_if_modified = add_pre_commit_configuration_if_modified
         self.run_pre_commit = run_pre_commit
+        self.pre_commit_hooks = pre_commit_hooks if pre_commit_hooks else []
+        self.skip_pre_commit_hooks = skip_pre_commit_hooks if skip_pre_commit_hooks else []
         self.diff = diff
 
         if self.exists:
@@ -126,9 +132,20 @@ class _Edit:
                         file_.write(new_data)
                     if Path(".pre-commit-config.yaml").exists() and self.run_pre_commit:
                         try:
+                            env = os.environ.copy()
+                            skip_hooks = env["SKIP"].split(",") if "SKIP" in env else []
+                            skip_hooks.extend(self.skip_pre_commit_hooks)
+                            env["SKIP"] = ",".join(skip_hooks)
                             proc = run(
-                                ["pre-commit", "run", "--color=never", f"--files={self.filename}"],
+                                [
+                                    "pre-commit",
+                                    "run",
+                                    "--color=never",
+                                    f"--files={self.filename}",
+                                    *self.pre_commit_hooks,
+                                ],
                                 exit_on_error=False,
+                                env=env,
                             )
                             if proc.returncode != 0 and os.environ.get("DEBUG", "false").lower() in (
                                 "true",
