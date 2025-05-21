@@ -474,7 +474,8 @@ def git_grep(text: str, args: Optional[list[str]] = None) -> set[str]:
     files = set()
     for line in proc.stdout.split("\n"):
         if line and not line.startswith("Binary file "):
-            print(f"{Path.cwd()}/{line}")
+            if os.getenv("DEBUG"):
+                print(f"{Path.cwd()}/{line}")
             files.add(line.split(":")[0])
     return files
 
