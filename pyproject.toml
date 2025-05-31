@@ -12,8 +12,8 @@ version = "0.0.0"
 python = ">=3.9,<4.0"
 PyYAML = "6.0.2"
 requests = "2.32.3"
-"ruamel.yaml" = "0.18.10"
-identify = "2.6.10"
+"ruamel.yaml" = "0.18.12"
+identify = "2.6.12"
 tomlkit = "0.13.2"
 json5 = "0.12.0"
 configupdater = "3.2"
@@ -23,8 +23,8 @@ packaging = "25.0"
 
 [tool.poetry.group.dev.dependencies]
 prospector = { version = "1.16.1", extras = ["with_bandit", "with_mypy", "with_pyroma", "with_ruff"] }
-types-PyYAML = "6.0.12.20250402"
-types-requests = "2.32.0.20250328"
+types-PyYAML = "6.0.12.20250516"
+types-requests = "2.32.0.20250515"
 prospector-profile-duplicated = "1.10.5"
 prospector-profile-utils = "1.22.3"
 
