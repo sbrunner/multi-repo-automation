@@ -718,6 +718,7 @@ class App:
             self.action()
             return
         url_to_open = []
+        repo_in_error = {}
         try:
             for repo in self.repos:
                 multi_repo_automation.tools.set_repo_config(repo)
@@ -750,8 +751,9 @@ class App:
                                                 url_to_open.append(f"https://github.com/{repo['name']}/pulls")
                                             if self.one:
                                                 return
-                                    except Exception:  # pylint: disable=broad-exception-caught # noqa: BLE001
-                                        print(f"Error on {repo['name']}/{base_branch}")
+                                    except Exception as e:  # pylint: disable=broad-exception-caught # noqa: BLE001
+                                        repo_in_error[f"{repo['name']}/{base_branch}"] = str(e)
+                                        print(f"Error on {repo['name']}/{base_branch}: {e}")
                                         print(traceback.format_exc())
 
                             else:
@@ -766,6 +768,12 @@ class App:
                 run([self.browser, url])
             for url in url_to_open:
                 print(url)
+
+            if repo_in_error:
+                print()
+                print("Some repositories have errors:")
+                for repo_name, error in repo_in_error.items():
+                    print(f"Error on {repo_name}: {error}")
 
 
 def main(
