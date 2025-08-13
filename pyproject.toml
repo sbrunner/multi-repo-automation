@@ -22,7 +22,7 @@ typing-extensions = "4.14.1"
 packaging = "25.0"
 
 [tool.poetry.group.dev.dependencies]
-prospector = { version = "1.17.2", extras = ["with_bandit", "with_mypy", "with_pyroma", "with_ruff"] }
+prospector = { version = "1.17.3", extras = ["with_bandit", "with_mypy", "with_pyroma", "with_ruff"] }
 types-PyYAML = "6.0.12.20250516"
 types-requests = "2.32.4.20250611"
 prospector-profile-duplicated = "1.10.5"
