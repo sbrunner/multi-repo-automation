@@ -161,9 +161,9 @@ seq:
     yaml.indent(mapping=2, sequence=4, offset=2)
     document = yaml.load(txt_doc)
     python = get_python(document)
-    import multi_repo_automation.commented_yaml as mra_yaml  # noqa
+    import multi_repo_automation.commented_yaml as mra_yaml  # pylint: disable=unused-import # noqa: F401, PLC0415, PLW0406
 
-    obj = eval(python)  # pylint: disable=eval-used
+    obj = eval(python)  # pylint: disable=eval-used # noqa: S307
     new_doc = StringIO()
     yaml.dump(obj, new_doc)
     print(new_doc.getvalue())
