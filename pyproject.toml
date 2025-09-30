@@ -21,21 +21,21 @@ version = "0.0.0"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
-PyYAML = "6.0.2"
-requests = "2.32.4"
-"ruamel.yaml" = "0.18.14"
-identify = "2.6.12"
+PyYAML = "6.0.3"
+requests = "2.32.5"
+"ruamel.yaml" = "0.18.15"
+identify = "2.6.14"
 tomlkit = "0.13.3"
-json5 = "0.12.0"
+json5 = "0.12.1"
 configupdater = "3.2"
 security_md = "1.0.0"
-typing-extensions = "4.14.1"
+typing-extensions = "4.15.0"
 packaging = "25.0"
 
 [tool.poetry.group.dev.dependencies]
 prospector = { version = "1.17.3", extras = ["with_bandit", "with_mypy", "with_pyroma", "with_ruff"] }
-types-PyYAML = "6.0.12.20250516"
-types-requests = "2.32.4.20250611"
+types-PyYAML = "6.0.12.20250915"
+types-requests = "2.32.4.20250913"
 prospector-profile-duplicated = "1.10.5"
 prospector-profile-utils = "1.26.5"
 
