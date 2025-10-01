@@ -785,10 +785,6 @@ class JSON5RowAttribute(JSON5Item):
         """Check if the key is in the data."""
         return key in self.value
 
-    def __iter__(self) -> Iterator[str]:
-        """Iterate over the keys."""
-        return iter(self.value)
-
     def __len__(self) -> int:
         """Return the number of keys."""
         return len(self.value)
