@@ -727,10 +727,14 @@ class App:
                         print(f"=== {repo['name']} ===")
                         with Cwd(repo):
                             if self.do_pr:
+                                default_branch = get_default_branch()
+                                stabilization_only_branches = {
+                                    b for b in get_stabilization_branches(repo) if b != default_branch
+                                }
                                 base_branches: set[str] = (
-                                    get_stabilization_branches(repo)
+                                    stabilization_only_branches
                                     if self.do_pr_on_stabilization_branches
-                                    else {get_default_branch()}
+                                    else {default_branch}
                                 )
 
                                 for base_branch in base_branches:
