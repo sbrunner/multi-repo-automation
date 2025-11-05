@@ -33,7 +33,7 @@ jobs:
 
       - uses: actions/setup-python@v6
         with:
-          python-version: '3.13'
+          python-version: '3.14'
       - run: pip install $(grep pre-commit ci/requirements.txt)
       - run: pip install --editable=.
 
@@ -136,7 +136,7 @@ jobs:
 
       - uses: actions/setup-python@v6
         with:
-          python-version: '3.13'
+          python-version: '3.14'
       - run: python3 -m pip install --requirement=ci/requirements.txt
 
       - name: Init pypi
