@@ -23,7 +23,7 @@ version = "0.0.0"
 python = ">=3.9,<4.0"
 PyYAML = "6.0.3"
 requests = "2.32.5"
-"ruamel.yaml" = "0.18.16"
+"ruamel.yaml" = "0.19.0"
 identify = "2.6.15"
 tomlkit = "0.13.3"
 json5 = "0.12.1"
@@ -81,7 +81,7 @@ classifiers = [
 ]
 authors = [{name = "Stéphane Brunner",email = "stephane.brunner@gmail.com"}]
 requires-python = ">=3.9"
-dependencies = ["PyYAML", "requests", "ruamel.yaml", "identify", "tomlkit", "json5", "configupdater", "security_md", "typing-extensions", "packaging", "urllib3==2.6.0"]
+dependencies = ["PyYAML", "requests", "ruamel.yaml", "identify", "tomlkit", "json5", "configupdater", "security_md", "typing-extensions", "packaging", "urllib3==2.6.2"]
 
 [project.urls]
 repository = "https://github.com/sbrunner/multi-repo-automation"
