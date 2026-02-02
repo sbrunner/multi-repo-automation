@@ -10,7 +10,7 @@ import traceback
 from collections.abc import Callable
 from pathlib import Path
 from types import TracebackType
-from typing import Any, Literal, Optional, TypedDict
+from typing import Any, Literal, TypedDict
 
 import packaging.version
 import requests
