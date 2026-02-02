@@ -6,7 +6,7 @@ import shlex
 import subprocess  # nosec
 import sys
 from pathlib import Path
-from typing import Any, TypedDict, Union, cast
+from typing import Any, TypedDict, cast
 
 import yaml
 from typing_extensions import Required
@@ -77,7 +77,7 @@ class Repo(TypedDict, total=False):
     clean: bool
 
 
-_REPO_CONFIG: Union[Repo, dict[str, None]] = {}
+_REPO_CONFIG: Repo | dict[str, None] = {}
 
 
 def set_repo_config(repo_config: Repo) -> None:
