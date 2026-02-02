@@ -3,12 +3,12 @@
 import argparse
 import sys
 from io import StringIO
-from typing import Any, Union
+from typing import Any
 
 import ruamel.yaml
 
 
-def commented_sec(value: list[Union[tuple[Any], tuple[Any, str]]]) -> ruamel.yaml.comments.CommentedSeq:
+def commented_sec(value: list[tuple[Any] | tuple[Any, str]]) -> ruamel.yaml.comments.CommentedSeq:
     """Get a commented list (for ruamel)."""
     result = ruamel.yaml.comments.CommentedSeq([v[0] for v in value])
     for key, val in enumerate(value):
@@ -20,7 +20,7 @@ def commented_sec(value: list[Union[tuple[Any], tuple[Any, str]]]) -> ruamel.yam
 
 
 def commented_map(
-    value: dict[str, Union[tuple[Any], tuple[Any, str], tuple[Any, str, int]]],
+    value: dict[str, tuple[Any] | tuple[Any, str] | tuple[Any, str, int]],
 ) -> ruamel.yaml.comments.CommentedMap:
     """Get a commented dictionary (for ruamel)."""
     result = ruamel.yaml.comments.CommentedMap({k: v[0] for k, v in value.items()})

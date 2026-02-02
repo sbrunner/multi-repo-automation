@@ -7,9 +7,10 @@ import shutil
 import subprocess  # nosec
 import tempfile
 import traceback
+from collections.abc import Callable
 from pathlib import Path
 from types import TracebackType
-from typing import Any, Callable, Literal, Optional, TypedDict
+from typing import Any, Literal, TypedDict
 
 import packaging.version
 import requests
@@ -56,7 +57,7 @@ else:
 CONFIG_PATH = CONFIG_FOLDER / CONFIG_FILENAME
 
 
-_ARGUMENTS: Optional[argparse.Namespace] = None
+_ARGUMENTS: argparse.Namespace | None = None
 
 
 def get_arguments() -> argparse.Namespace:
@@ -65,7 +66,7 @@ def get_arguments() -> argparse.Namespace:
     return _ARGUMENTS
 
 
-def all_filenames(repo: Optional[Repo] = None) -> list[str]:
+def all_filenames(repo: Repo | None = None) -> list[str]:
     """Get all the filenames of the repository."""
     cmd = ["git", "ls-files"]
     result = (
@@ -76,7 +77,7 @@ def all_filenames(repo: Optional[Repo] = None) -> list[str]:
     return result.stdout.strip().split("\n")
 
 
-def all_identify(repo: Optional[Repo] = None) -> set[str]:
+def all_identify(repo: Repo | None = None) -> set[str]:
     """Get all the types of the repository."""
     result: set[str] = set()
     for filename in all_filenames(repo):
@@ -84,7 +85,7 @@ def all_identify(repo: Optional[Repo] = None) -> set[str]:
     return result
 
 
-def all_filenames_identify(type_: str, repo: Optional[Repo] = None) -> list[str]:
+def all_filenames_identify(type_: str, repo: Repo | None = None) -> list[str]:
     """Check if the repository contains a file of the given type."""
     return [filename for filename in all_filenames(repo) if type_ in identify.tags_from_path(filename)]
 
@@ -107,9 +108,9 @@ class Cwd:
 
     def __exit__(
         self,
-        exc_type: Optional[type[BaseException]],
-        exc_val: Optional[BaseException],
-        exc_tb: Optional[TracebackType],
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
     ) -> Literal[False]:
         """Restore the cwd."""
         del exc_tb
@@ -160,16 +161,16 @@ class CreateBranch:
     ```
     """
 
-    message: Optional[str]
+    message: str | None
 
     def __init__(
         self,
         repo: Repo,
         new_branch_name: str,
-        commit_message: Optional[str] = None,
+        commit_message: str | None = None,
         force: bool = True,
-        base_branch: Optional[str] = None,
-        pull_request_body: Optional[str] = None,
+        base_branch: str | None = None,
+        pull_request_body: str | None = None,
     ) -> None:
         """Initialize."""
         self.repo = repo
@@ -231,9 +232,9 @@ class CreateBranch:
 
     def __exit__(
         self,
-        exc_type: Optional[type[BaseException]],
-        exc_val: Optional[BaseException],
-        exc_tb: Optional[TracebackType],
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
     ) -> Literal[False]:
         """Create the pull request."""
         del exc_tb
@@ -260,12 +261,12 @@ class CreateBranch:
 
 def create_pull_request(
     repo: Repo,
-    title: Optional[str] = None,
+    title: str | None = None,
     commit: bool = True,
-    label: Optional[str] = None,
-    body: Optional[str] = None,
+    label: str | None = None,
+    body: str | None = None,
     force: bool = True,
-    base_branch: Optional[str] = None,
+    base_branch: str | None = None,
 ) -> tuple[bool, str]:
     """Create a pull request."""
     run(["git", "status", "--short"])
@@ -383,9 +384,9 @@ class Branch:
 
     def __exit__(
         self,
-        exc_type: Optional[type[BaseException]],
-        exc_val: Optional[BaseException],
-        exc_tb: Optional[TracebackType],
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
     ) -> Literal[False]:
         """Exit."""
         del exc_tb
@@ -427,9 +428,9 @@ class Commit:
 
     def __exit__(
         self,
-        exc_type: Optional[type[BaseException]],
-        exc_val: Optional[BaseException],
-        exc_tb: Optional[TracebackType],
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
     ) -> Literal[False]:
         """Commit the changes."""
         del exc_tb
@@ -463,7 +464,7 @@ def copy_file(from_: str, to_: Path, only_if_already_exists: bool = True) -> Non
         shutil.copyfile(from_, to_)
 
 
-def git_grep(text: str, args: Optional[list[str]] = None) -> set[str]:
+def git_grep(text: str, args: list[str] | None = None) -> set[str]:
     """Grep the code against the text."""
     proc = run(
         ["git", "grep", *(args or []), "--", text],
@@ -489,7 +490,7 @@ def replace(filename: Path, search_text: str, replace_text: str) -> None:
         file_.write(content)
 
 
-def _gopass(key: str, default: Optional[str] = None) -> Optional[str]:
+def _gopass(key: str, default: str | None = None) -> str | None:
     """
     Get a value from gopass.
 
@@ -532,7 +533,7 @@ def _add_authorization_header(headers: dict[str, str]) -> dict[str, str]:
     return headers
 
 
-def _get_security(repo: Repo) -> Optional[security_md.Security]:
+def _get_security(repo: Repo) -> security_md.Security | None:
     """Get the security file, parsed."""
     security_url = (
         f"https://raw.githubusercontent.com/{repo['name']}/{repo.get('master_branch', 'master')}/SECURITY.md"
@@ -646,7 +647,7 @@ def get_stabilization_branches(repo: Repo) -> set[str]:
 def do_on_base_branches(
     repo: Repo,
     branch_prefix: str,
-    func: Callable[[Repo], Optional[list[str]]],
+    func: Callable[[Repo], list[str] | None],
 ) -> list[str]:
     """Do the func action on all the base branches of the repo."""
     result = set()
@@ -681,11 +682,11 @@ class App:
 
     do_pr = False
     do_pr_on_stabilization_branches = False
-    branch_prefix: Optional[str] = None
+    branch_prefix: str | None = None
     kwargs: Any = None
     local = False
     one = False
-    repository_prefix: Optional[str] = None
+    repository_prefix: str | None = None
 
     def __init__(self, repos: list[Repo], action: Callable[[], None], browser: str = "firefox") -> None:
         self.repos = repos
@@ -781,10 +782,10 @@ class App:
 
 
 def main(
-    action: Optional[Callable[[], None]] = None,
+    action: Callable[[], None] | None = None,
     description: str = "Apply an action on all the pre-configured repositories.",
-    config: Optional[dict[str, str]] = None,
-    add_arguments: Optional[Callable[[argparse.ArgumentParser], None]] = None,
+    config: dict[str, str] | None = None,
+    add_arguments: Callable[[argparse.ArgumentParser], None] | None = None,
 ) -> None:
     """Apply an action on all the repos."""
     config = config or {}

@@ -15,10 +15,8 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Literal,
-    Optional,
     SupportsIndex,
     TypedDict,
-    Union,
     cast,
 )
 
@@ -61,8 +59,8 @@ class _Edit:
         force: bool = False,
         add_pre_commit_configuration_if_modified: bool = True,
         run_pre_commit: bool = True,
-        pre_commit_hooks: Optional[list[str]] = None,
-        skip_pre_commit_hooks: Optional[list[str]] = None,
+        pre_commit_hooks: list[str] | None = None,
+        skip_pre_commit_hooks: list[str] | None = None,
         diff: bool = False,
     ) -> None:
         self.filename = filename
@@ -92,9 +90,9 @@ class _Edit:
 
     def __exit__(
         self,
-        exc_type: Optional[type[BaseException]],
-        exc_val: Optional[BaseException],
-        exc_tb: Optional[TracebackType],
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
     ) -> Literal[False]:
         """Save the file if the data has changed."""
         del exc_tb
@@ -497,7 +495,7 @@ class EditPreCommitConfig(EditYAML):
     def add_pre_commit_hook(self) -> None:
         """Add the pre-commit hook (none needed)."""
 
-    def add_repo(self, repo: str, rev: Optional[str] = None) -> None:
+    def add_repo(self, repo: str, rev: str | None = None) -> None:
         """Add a repo to the pre-commit config."""
         if rev is None:
             rev = run(
@@ -670,7 +668,7 @@ class EditRenovateConfig(Edit):
             index = self.data.rindex("}")
             self.data = self.data[:index] + data + self.data[index:]
 
-    def _clean_data(self, data: Union[str, list[Any], dict[str, Any]]) -> str:
+    def _clean_data(self, data: str | list[Any] | dict[str, Any]) -> str:
         if isinstance(data, dict):
             data = json5.dumps(data, indent=2)
             assert isinstance(data, str)
@@ -692,9 +690,9 @@ class EditRenovateConfig(Edit):
 
     def add_regex_manager(
         self,
-        data: Union[str, list[Any], dict[str, Any]],
+        data: str | list[Any] | dict[str, Any],
         test: str,
-        comment: Optional[str] = None,
+        comment: str | None = None,
     ) -> None:
         """Add a regex manager to the Renovate config."""
         data = self._clean_data(data)
@@ -725,9 +723,9 @@ class EditRenovateConfig(Edit):
 
     def add_package_rule(
         self,
-        data: Union[str, list[Any], dict[str, Any]],
+        data: str | list[Any] | dict[str, Any],
         test: str,
-        comment: Optional[str] = None,
+        comment: str | None = None,
     ) -> None:
         """Add a package rule to the Renovate config."""
         data = self._clean_data(data)
@@ -771,7 +769,7 @@ class JSON5RowAttribute(JSON5Item):
         """Return the data, no comments."""
         return self.value
 
-    def __getitem__(self, key: Union[str, int]) -> Any:
+    def __getitem__(self, key: str | int) -> Any:
         return self.value[key]
 
     def __setitem__(self, key: str, value: Any) -> None:
@@ -821,7 +819,7 @@ class JSON5RowAttribute(JSON5Item):
         """Extend the list."""
         self.value.extend(values)
 
-    def __get_item__(self, key: Union[SupportsIndex, slice]) -> Any:
+    def __get_item__(self, key: SupportsIndex | slice) -> Any:
         return self.value[key]
 
     def __str__(self) -> str:
@@ -834,7 +832,7 @@ class JSON5RowAttribute(JSON5Item):
 class JSON5RowDict(JSON5RowAttribute):
     """Dict (row) with comments."""
 
-    def __init__(self, value: Optional[dict[str, Any]] = None) -> None:
+    def __init__(self, value: dict[str, Any] | None = None) -> None:
         super().__init__(value if value is not None else {})
 
     def keys(self) -> DictKeysStrAny:
@@ -845,7 +843,7 @@ class JSON5RowDict(JSON5RowAttribute):
 class JSON5RowList(JSON5RowAttribute):
     """List (row) with comments."""
 
-    def __init__(self, value: Optional[list[Any]] = None) -> None:
+    def __init__(self, value: list[Any] | None = None) -> None:
         super().__init__(value if value is not None else [])
 
     def __iter__(self) -> Iterator[Any]:
@@ -953,7 +951,7 @@ class JSON5List(JSON5Item, list[Any]):
 
     children: list[JSON5Item]
 
-    def __init__(self, children: Optional[list[Any]] = None) -> None:
+    def __init__(self, children: list[Any] | None = None) -> None:
         super().__init__()
         self.children = [] if children is None else children
 
@@ -961,7 +959,7 @@ class JSON5List(JSON5Item, list[Any]):
         """Return the data, no comments."""
         return [value.data() for value in self.children]
 
-    def __getitem__(self, key: Union[SupportsIndex, slice]) -> Any:
+    def __getitem__(self, key: SupportsIndex | slice) -> Any:
         return self.children[key]
 
     def __setitem__(self, key: SupportsIndex, value: Any) -> None:  # type: ignore[override]
@@ -981,7 +979,7 @@ class JSON5List(JSON5Item, list[Any]):
         self.children[key] = attribute
 
     # Add proxy method of sequence object
-    def __delitem__(self, key: Union[SupportsIndex, slice]) -> None:
+    def __delitem__(self, key: SupportsIndex | slice) -> None:
         """Delete the key."""
         del self.children[key]
 
@@ -1238,7 +1236,7 @@ class EditJSON5(_EditDict):
 
         return root
 
-    def dump(self, data: Union[dict[str, Any], JSON5Dict, JSON5List]) -> str:
+    def dump(self, data: dict[str, Any] | JSON5Dict | JSON5List) -> str:
         """Dump the data."""
         if isinstance(data, JSON5Dict):
             lines = ["{"]
@@ -1266,7 +1264,7 @@ class EditRenovateConfigV2(EditJSON5):
     def __init__(self, filename: Path = Path(".github/renovate.json5"), **kwargs: Any) -> None:
         super().__init__(filename, **kwargs)
 
-    def regex_manager_index(self, data: dict[str, Any], comment: Optional[list[str]] = None) -> Optional[int]:
+    def regex_manager_index(self, data: dict[str, Any], comment: list[str] | None = None) -> int | None:
         """Remove a regex manager to the Renovate config."""
         if "customManagers" not in self.data:
             return None
@@ -1293,7 +1291,7 @@ class EditRenovateConfigV2(EditJSON5):
 
         return found_index if found else None
 
-    def add_regex_manager(self, data: dict[str, Any], comment: Optional[list[str]] = None) -> None:
+    def add_regex_manager(self, data: dict[str, Any], comment: list[str] | None = None) -> None:
         """Add a regex manager to the Renovate config."""
         attribute = JSON5Dict()
         if comment:
@@ -1308,7 +1306,7 @@ class EditRenovateConfigV2(EditJSON5):
         else:
             self.data.setdefault("customManagers", []).append(attribute)
 
-    def remove_regex_manager(self, data: dict[str, Any], comment: Optional[list[str]] = None) -> None:
+    def remove_regex_manager(self, data: dict[str, Any], comment: list[str] | None = None) -> None:
         """Remove a regex manager to the Renovate config."""
         index = self.regex_manager_index(data, comment)
 
@@ -1321,9 +1319,9 @@ class EditRenovateConfigV2(EditJSON5):
     def package_rule_index(
         self,
         data: dict[str, Any],
-        comment: Optional[list[str]] = None,
-        checks_keys: Optional[list[str]] = None,
-    ) -> Optional[int]:
+        comment: list[str] | None = None,
+        checks_keys: list[str] | None = None,
+    ) -> int | None:
         """Get the package rule index in the Renovate config."""
         if "packageRules" in self.data:
             for index, package_rule in enumerate(self.data["packageRules"]):
@@ -1367,8 +1365,8 @@ class EditRenovateConfigV2(EditJSON5):
     def add_package_rule(
         self,
         data: dict[str, Any],
-        comment: Optional[list[str]] = None,
-        checks_keys: Optional[list[str]] = None,
+        comment: list[str] | None = None,
+        checks_keys: list[str] | None = None,
     ) -> None:
         """Add a package rule to the Renovate config."""
         attribute = JSON5Dict()
@@ -1391,8 +1389,8 @@ class EditRenovateConfigV2(EditJSON5):
     def remove_package_rule(
         self,
         data: dict[str, Any],
-        comment: Optional[list[str]] = None,
-        checks_keys: Optional[list[str]] = None,
+        comment: list[str] | None = None,
+        checks_keys: list[str] | None = None,
     ) -> None:
         """Remove a package rule."""
         index = self.package_rule_index(data, comment, checks_keys)
