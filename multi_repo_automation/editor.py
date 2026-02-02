@@ -25,7 +25,7 @@ import ruamel.yaml.comments
 import ruamel.yaml.scalarstring
 import tomlkit
 from configupdater import ConfigUpdater
-from typing_extensions import Required
+from typing_extensions import Required, Self
 
 from multi_repo_automation.tools import edit, run
 
@@ -79,7 +79,7 @@ class _Edit:
             self.data = self.get_empty()
         self.original_data = self.dump(self.data)
 
-    def __enter__(self) -> "_Edit":
+    def __enter__(self) -> Self:
         """Load the file."""
         return self
 
