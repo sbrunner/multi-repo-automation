@@ -1,5 +1,5 @@
 [tool.ruff]
-target-version = "py39"
+target-version = "py310"
 line-length = 110
 
 [tool.ruff.lint]
@@ -20,7 +20,7 @@ convention = "numpy"
 version = "0.0.0"
 
 [tool.poetry.dependencies]
-python = ">=3.9,<4.0"
+python = ">=3.10,<4.0"
 PyYAML = "6.0.3"
 requests = "2.32.5"
 "ruamel.yaml" = "0.19.1"
@@ -72,7 +72,6 @@ classifiers = [
     'Operating System :: OS Independent',
     'Programming Language :: Python',
     'Programming Language :: Python :: 3',
-    'Programming Language :: Python :: 3.9',
     'Programming Language :: Python :: 3.10',
     'Programming Language :: Python :: 3.11',
     'Programming Language :: Python :: 3.12',
@@ -80,7 +79,7 @@ classifiers = [
     'Typing :: Typed',
 ]
 authors = [{name = "Stéphane Brunner",email = "stephane.brunner@gmail.com"}]
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 dependencies = ["PyYAML", "requests", "ruamel.yaml", "identify", "tomlkit", "json5", "configupdater", "security_md", "typing-extensions", "packaging", "urllib3==2.6.3"]
 
 [project.urls]
