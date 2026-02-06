@@ -171,7 +171,7 @@ def edit(files: list[Path]) -> None:
 def gh(command: str, *args: str, **kwargs: Any) -> str:  # pylint: disable=invalid-name
     """Run a GitHub command."""
     return run(
-        ["gh", command, *([] if command in ("label",) else [f"--repo={get_repo_config()['name']}"]), *args],
+        ["gh", command, *([] if command == "label" else [f"--repo={get_repo_config()['name']}"]), *args],
         stdout=subprocess.PIPE,
         **kwargs,
     ).stdout.strip()
