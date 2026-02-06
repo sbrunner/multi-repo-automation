@@ -68,8 +68,8 @@ class _Edit:
         self.exists = filename.exists()
         self.add_pre_commit_configuration_if_modified = add_pre_commit_configuration_if_modified
         self.run_pre_commit = run_pre_commit
-        self.pre_commit_hooks = pre_commit_hooks if pre_commit_hooks else []
-        self.skip_pre_commit_hooks = skip_pre_commit_hooks if skip_pre_commit_hooks else []
+        self.pre_commit_hooks = pre_commit_hooks or []
+        self.skip_pre_commit_hooks = skip_pre_commit_hooks or []
         self.diff = diff
 
         if self.exists:
