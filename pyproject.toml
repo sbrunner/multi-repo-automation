@@ -31,6 +31,7 @@ configupdater = "3.2"
 security_md = "1.0.0"
 typing-extensions = "4.15.0"
 packaging = "26.0"
+anyio = "4.12.1"
 
 [tool.poetry.group.dev.dependencies]
 prospector = { version = "1.18.0", extras = ["with_bandit", "with_mypy", "with_pyroma", "with_ruff"] }
@@ -80,7 +81,7 @@ classifiers = [
 ]
 authors = [{name = "Stéphane Brunner",email = "stephane.brunner@gmail.com"}]
 requires-python = ">=3.10"
-dependencies = ["PyYAML", "requests", "ruamel.yaml", "identify", "tomlkit", "json5", "configupdater", "security_md", "typing-extensions", "packaging", "urllib3==2.6.3"]
+dependencies = ["PyYAML", "requests", "ruamel.yaml", "identify", "tomlkit", "json5", "configupdater", "security_md", "typing-extensions", "packaging", "urllib3==2.6.3", "anyio"]
 
 [project.urls]
 repository = "https://github.com/sbrunner/multi-repo-automation"
