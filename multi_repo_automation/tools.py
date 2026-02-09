@@ -3,6 +3,7 @@
 import json
 import os
 import shlex
+import shutil
 import subprocess  # nosec
 import sys
 from pathlib import Path
@@ -57,6 +58,13 @@ _EDITOR = "xdg-open"
 def get_editor() -> str:
     """Get the used editor."""
     return _EDITOR
+
+
+def get_pre_commit() -> str:
+    """Return 'prek' if it is installed; otherwise return 'pre-commit'."""
+    if shutil.which("prek"):
+        return "prek"
+    return "pre-commit"
 
 
 def set_editor(editor: str) -> None:

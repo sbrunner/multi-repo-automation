@@ -1,21 +1,21 @@
 """The provided editors."""
 
+import asyncio
 import difflib
 import io
 import os
 import re
+import shlex
 import subprocess  # nosec
 import sys
 import traceback
 from abc import abstractmethod
-from collections.abc import ItemsView, Iterable, Iterator, KeysView, ValuesView
-from pathlib import Path
+from collections.abc import ItemsView, Iterator, KeysView, ValuesView
 from types import TracebackType
 from typing import (
     TYPE_CHECKING,
     Any,
     Literal,
-    SupportsIndex,
     TypedDict,
     cast,
 )
@@ -24,10 +24,19 @@ import json5
 import ruamel.yaml.comments
 import ruamel.yaml.scalarstring
 import tomlkit
+from anyio import Path
 from configupdater import ConfigUpdater
 from typing_extensions import Required, Self
 
-from multi_repo_automation.tools import edit, get_pre_commit, run
+from multi_repo_automation.editor import (
+    JSON5Dict,
+    JSON5Item,
+    JSON5List,
+    JSON5RowAttribute,
+    JSON5RowDict,
+    JSON5RowList,
+)
+from multi_repo_automation.tools import get_editor, get_pre_commit
 
 if TYPE_CHECKING:
     from _collections_abc import dict_items, dict_keys, dict_values
@@ -40,6 +49,59 @@ else:
     DictItemsStrAny = Any
     DictKeysStrAny = Any
     DictValuesStrAny = Any
+
+
+async def edit(files: list[Path]) -> None:
+    """Edit the files in an editor."""
+    for file in files:
+        print(await file.resolve())
+        async with await file.open("a", encoding="utf-8"):
+            pass
+        await run([get_editor(), str(file)])
+        print("Press enter to continue")
+        await asyncio.to_thread(input)
+        # Remove the file if it is empty
+        if await file.exists() and (await file.stat()).st_size == 0:
+            await file.unlink()
+
+
+async def run(
+    cmd: list[str],
+    exit_on_error: bool = True,
+    auto_fix_owner: bool = False,
+    **kwargs: Any,
+) -> tuple[asyncio.subprocess.Process, bytes | None, bytes | None]:  # pylint: disable=no-member
+    """Run a command."""
+    print(f"$ {shlex.join(cmd)}")
+    sys.stdout.flush()
+
+    timeout = os.environ.get("MRA_TIMEOUT")
+    timeout_value = int(timeout) if timeout else None
+
+    # Prepare subprocess arguments
+    stdout = kwargs.pop("stdout", None)
+    stderr = kwargs.pop("stderr", subprocess.PIPE)
+
+    # Create async subprocess
+    proc = await asyncio.create_subprocess_exec(*cmd, stdout=stdout, stderr=stderr, **kwargs)
+
+    try:
+        stdout_data, stderr_data = await asyncio.wait_for(proc.communicate(), timeout=timeout_value)
+    except asyncio.TimeoutError:
+        proc.kill()
+        await proc.wait()
+        raise
+
+    if auto_fix_owner and proc.returncode != 0:
+        await run(["sudo", "chown", "-R", f"{os.getuid()}:{os.getgid()}", "."])
+        proc = await asyncio.create_subprocess_exec(*cmd, stdout=stdout, stderr=stderr, **kwargs)
+        stdout_data, stderr_data = await proc.communicate()
+
+    if proc.returncode != 0:
+        print(f"Error on running: {shlex.join(cmd)}")
+        if exit_on_error:
+            sys.exit(proc.returncode)
+    return proc, stdout_data, stderr_data
 
 
 class _Edit:
@@ -65,22 +127,24 @@ class _Edit:
     ) -> None:
         self.filename = filename
         self.force = force
-        self.exists = filename.exists()
+        self.exists = False
         self.add_pre_commit_configuration_if_modified = add_pre_commit_configuration_if_modified
         self.run_pre_commit = run_pre_commit
         self.pre_commit_hooks = pre_commit_hooks or []
         self.skip_pre_commit_hooks = skip_pre_commit_hooks or []
         self.diff = diff
+        self.data = self.get_empty()
+        self.original_data = ""
 
+    async def __aenter__(self) -> Self:
+        """Load the file."""
+        self.exists = await self.filename.exists()
         if self.exists:
-            with self.filename.open(encoding="utf-8") as file:
-                self.data = self.load(file)  # nosec
+            async with await self.filename.open(encoding="utf-8") as file:
+                self.data = self.load(await file.read())  # nosec
         else:
             self.data = self.get_empty()
-        self.original_data = self.dump(self.data)
-
-    def __enter__(self) -> Self:
-        """Load the file."""
+        self.original_data = self.dump(self.data) if self.data else ""
         return self
 
     def is_modified(self) -> bool:
@@ -88,7 +152,7 @@ class _Edit:
         new_data = self.dump(self.data) if self.data else ""
         return new_data != self.original_data
 
-    def __exit__(
+    async def __aexit__(
         self,
         exc_type: type[BaseException] | None,
         exc_val: BaseException | None,
@@ -106,13 +170,13 @@ class _Edit:
 
         if exc_type is None:
             if not self.exists and not self.data:
-                self.filename.unlink()
+                await self.filename.unlink()
                 return False
 
             new_data = self.dump(self.data) if self.data else ""
             if self.force or new_data != self.original_data:
                 if self.add_pre_commit_configuration_if_modified:
-                    self.add_pre_commit_hook()
+                    await self.add_pre_commit_hook()
 
                 if self.diff:
                     sys.stdout.writelines(
@@ -122,19 +186,19 @@ class _Edit:
                         ),
                     )
                 else:
-                    # Create directory if he didn't exists
+                    # Create directory if it didn't exists
                     dirname = self.filename.parent
-                    if dirname and not dirname.exists():
-                        dirname.mkdir(parents=True)
-                    with self.filename.open("w", encoding="utf-8") as file_:
-                        file_.write(new_data)
-                    if Path(".pre-commit-config.yaml").exists() and self.run_pre_commit:
+                    if dirname and not await dirname.exists():
+                        await dirname.mkdir(parents=True)
+                    async with await self.filename.open("w", encoding="utf-8") as file_:
+                        await file_.write(new_data)
+                    if await Path(".pre-commit-config.yaml").exists() and self.run_pre_commit:
                         try:
                             env = os.environ.copy()
                             skip_hooks = env["SKIP"].split(",") if "SKIP" in env else []
                             skip_hooks.extend(self.skip_pre_commit_hooks)
                             env["SKIP"] = ",".join(skip_hooks)
-                            proc = run(
+                            proc, _, _ = await run(
                                 [
                                     get_pre_commit(),
                                     "run",
@@ -149,18 +213,18 @@ class _Edit:
                                 "true",
                                 "1",
                             ):
-                                proc = run(
+                                proc, _, _ = await run(
                                     [get_pre_commit(), "run", f"--files={self.filename}"],
                                     exit_on_error=False,
                                 )
                                 if proc.returncode != 0:
-                                    edit([self.filename])
-                        except subprocess.TimeoutExpired as exc:
+                                    await edit([self.filename])
+                        except (asyncio.TimeoutError, subprocess.TimeoutExpired) as exc:
                             print(exc)
         return False
 
     @abstractmethod
-    def load(self, content: io.TextIOWrapper) -> Any:
+    def load(self, content: str) -> Any:
         """Load the content."""
         del content
         raise NotImplementedError
@@ -175,7 +239,7 @@ class _Edit:
     def get_empty(self) -> Any:
         """Get the empty data."""
 
-    def add_pre_commit_hook(self) -> None:
+    async def add_pre_commit_hook(self) -> None:
         """Add the pre-commit hook."""
 
 
@@ -186,14 +250,14 @@ class Edit(_Edit):
     Usage:
 
     ```python
-    with Edit("file.txt") as file:
+    async with Edit("file.txt") as file:
         file.content = "Header\n" + file.content
     ```
     """
 
-    def load(self, content: io.TextIOWrapper) -> Any:
+    def load(self, content: str) -> Any:
         """Load the content."""
-        return content.read()
+        return content
 
     def dump(self, data: Any) -> str:
         """Load the content."""
@@ -209,7 +273,7 @@ class _EditDict(_Edit):
     data: dict[str, Any]
 
     @abstractmethod
-    def load(self, content: io.TextIOWrapper) -> dict[str, Any]:
+    def load(self, content: str) -> dict[str, Any]:
         """Load the content."""
         del content
         raise NotImplementedError
@@ -283,17 +347,17 @@ class _EditDict(_Edit):
 
 class EditYAML(_EditDict, dict[str, Any]):
     """
-    Edit a YAML file by keeping the comments, in a with instruction.
+    Edit a YAML file by keeping the comments, using an async with statement.
 
     ```python
-    with EditYAML("file.yaml") as yaml:
+    async with EditYAML("file.yaml") as yaml:
         yaml["key"] = "value"
     ```
     """
 
     def __init__(
         self,
-        filename: Path,
+        filename: Path | None = None,
         width: int = 110,
         default_flow_style: bool = False,
         preserve_quotes: bool = True,
@@ -302,6 +366,8 @@ class EditYAML(_EditDict, dict[str, Any]):
         offset: int = 2,
         **kwargs: Any,
     ) -> None:
+        if filename is None:
+            filename = Path(".pre-commit-config.yaml")
         self.yaml = ruamel.yaml.YAML()
         self.yaml.default_flow_style = default_flow_style
         self.yaml.width = width
@@ -310,7 +376,7 @@ class EditYAML(_EditDict, dict[str, Any]):
 
         super().__init__(filename, **kwargs)
 
-    def load(self, content: io.TextIOWrapper) -> dict[str, Any]:
+    def load(self, content: str) -> dict[str, Any]:
         """Load the file."""
         return cast("dict[str, Any]", self.yaml.load(content))
 
@@ -321,11 +387,11 @@ class EditYAML(_EditDict, dict[str, Any]):
         self.yaml.dump(self.data, out)
         return out.getvalue()
 
-    def add_pre_commit_hook(self) -> None:
+    async def add_pre_commit_hook(self) -> None:
         """Add the pre-commit hook to format the file."""
-        with EditPreCommitConfig() as pre_commit_config:
+        async with EditPreCommitConfig() as pre_commit_config:
             assert isinstance(pre_commit_config, EditPreCommitConfig)
-            pre_commit_config.add_repo("https://github.com/pre-commit/mirrors-prettier", "v2.7.1")
+            await pre_commit_config.add_repo("https://github.com/pre-commit/mirrors-prettier", "v2.7.1")
             pre_commit_config.add_hook(
                 "https://github.com/pre-commit/mirrors-prettier",
                 {
@@ -360,27 +426,27 @@ class EditYAML(_EditDict, dict[str, Any]):
 
 class EditTOML(_EditDict):
     """
-    Edit a TOML file by keeping the comments, in a with instruction.
+    Edit a TOML file by keeping the comments, using an async with statement.
 
     ```python
-    with EditTOML("file.toml") as toml:
+    async with EditTOML("file.toml") as toml:
         toml["key"] = "value"
     ```
     """
 
-    def load(self, content: io.TextIOWrapper) -> dict[str, Any]:
+    def load(self, content: str) -> dict[str, Any]:
         """Load the file."""
-        return tomlkit.parse(content.read())
+        return tomlkit.parse(content)
 
     def dump(self, data: dict[str, Any]) -> str:
         """Load the file."""
         return tomlkit.dumps(data)
 
-    def add_pre_commit_hook(self) -> None:
+    async def add_pre_commit_hook(self) -> None:
         """Add the pre-commit hook to format the file."""
-        with EditPreCommitConfig() as pre_commit_config:
+        async with EditPreCommitConfig() as pre_commit_config:
             assert isinstance(pre_commit_config, EditPreCommitConfig)
-            pre_commit_config.add_repo("https://github.com/pre-commit/mirrors-prettier", "v2.7.1")
+            await pre_commit_config.add_repo("https://github.com/pre-commit/mirrors-prettier", "v2.7.1")
             pre_commit_config.add_hook(
                 "https://github.com/pre-commit/mirrors-prettier",
                 {
@@ -395,10 +461,10 @@ class EditTOML(_EditDict):
 
 class EditConfig(_EditDict):
     """
-    Edit a config file by keeping the comments, in a with instruction.
+    Edit a config file by keeping the comments, using an async with statement.
 
     ```python
-    with EditConfig("file.ini") as config:
+    async with EditConfig("file.ini") as config:
         config["key"] = "value"
     ```
     """
@@ -407,15 +473,17 @@ class EditConfig(_EditDict):
 
     def __init__(
         self,
-        filename: Path,
+        filename: Path | None = None,
         **kwargs: Any,
     ) -> None:
+        if filename is None:
+            filename = Path(".github/renovate.json5")
         self.updater = ConfigUpdater()
         super().__init__(filename, **kwargs)
 
-    def load(self, content: io.TextIOWrapper) -> Any:
+    def load(self, content: str) -> Any:
         """Load the file."""
-        return self.updater.read_string(content.read())
+        return self.updater.read_string(content)
 
     def dump(self, data: Any) -> str:
         """Load the file."""
@@ -468,14 +536,20 @@ class EditPreCommitConfig(EditYAML):
 
     def __init__(
         self,
-        filename: Path = Path(".pre-commit-config.yaml"),
+        filename: Path | None = None,
         fix_files: bool = True,
         save_on_fixed_files: bool = False,
         **kwargs: Any,
     ) -> None:
+        if filename is None:
+            filename = Path(".pre-commit-config.yaml")
         super().__init__(filename, **kwargs)
-
         self.repos_hooks: dict[str, _RepoHook] = {}
+        self.fix_files_enabled = fix_files
+        self.save_on_fixed_files = save_on_fixed_files
+
+    async def __aenter__(self) -> Self:
+        await super().__aenter__()
         for repo in self.setdefault("repos", []):
             self.repos_hooks.setdefault(repo["repo"], {"repo": repo, "hooks": {}})
             for hook in repo["hooks"]:
@@ -486,22 +560,24 @@ class EditPreCommitConfig(EditYAML):
                     if tag in hook and hook[tag].strip().startswith("(?x)"):
                         hook[tag] = ruamel.yaml.scalarstring.LiteralScalarString(hook[tag].strip())
 
-        if fix_files:
+        if self.fix_files_enabled:
             self.fix_files()
 
-        if not save_on_fixed_files:
+        if not self.save_on_fixed_files:
             self.original_data = self.dump(self.data)
+        return self
 
-    def add_pre_commit_hook(self) -> None:
+    async def add_pre_commit_hook(self) -> None:
         """Add the pre-commit hook (none needed)."""
 
-    def add_repo(self, repo: str, rev: str | None = None) -> None:
+    async def add_repo(self, repo: str, rev: str | None = None) -> None:
         """Add a repo to the pre-commit config."""
         if rev is None:
-            rev = run(
+            _, stdout_data, _ = await run(
                 ["gh", "release", "view", f"--repo={repo}", "--json=tagName", "--template={{.tagName}}"],
                 stdout=subprocess.PIPE,
-            ).stdout.strip()
+            )
+            rev = stdout_data.decode().strip() if stdout_data else ""
 
         if repo not in self.repos_hooks:
             repo_obj: _PreCommitRepo = {"repo": repo, "rev": rev, "hooks": []}
@@ -631,402 +707,6 @@ class EditPreCommitConfig(EditYAML):
             ]
 
         return super().dump(data)
-
-
-class EditRenovateConfig(Edit):
-    """
-    Edit the Renovate config file.
-
-    Conserve the comments, consider that we have at least the
-    packageRules, and just before the customManagers.
-    """
-
-    def __init__(self, filename: Path = Path(".github/renovate.json5"), **kwargs: Any) -> None:
-        super().__init__(filename, **kwargs)
-
-    def add(self, data: str, test: str) -> None:
-        """Add an other setting to the renovate config."""
-        if test not in data:
-            msg = f"Test '{test}' not found in data '{data}'."
-            raise ValueError(msg)
-
-        if test in self.data:
-            return
-
-        data = data.strip()
-        data = data.rstrip(",")
-        data = data.rstrip()
-        data = f"{data},"
-
-        if "customManagers" in self.data:
-            index = self.data.rindex("customManagers")
-            self.data = self.data[:index] + data + self.data[index:]
-        elif "packageRules" in self.data:
-            index = self.data.rindex("packageRules")
-            self.data = self.data[:index] + data + self.data[index:]
-        else:
-            index = self.data.rindex("}")
-            self.data = self.data[:index] + data + self.data[index:]
-
-    def _clean_data(self, data: str | list[Any] | dict[str, Any]) -> str:
-        if isinstance(data, dict):
-            data = json5.dumps(data, indent=2)
-            assert isinstance(data, str)
-        if isinstance(data, list):
-            data = json5.dumps(data, indent=2)
-            assert isinstance(data, str)
-            data = data.strip()
-            data = data.lstrip("[")
-            data = data.rstrip("]")
-
-        data = data.strip()
-        data = data.lstrip("{")
-        data = data.lstrip()
-        data = data.rstrip(",")
-        data = data.rstrip()
-        data = data.rstrip("}")
-        data = data.rstrip()
-        return f" {{ {data} }},\n"
-
-    def add_regex_manager(
-        self,
-        data: str | list[Any] | dict[str, Any],
-        test: str,
-        comment: str | None = None,
-    ) -> None:
-        """Add a regex manager to the Renovate config."""
-        data = self._clean_data(data)
-        if comment:
-            data = f"/** {comment} */\n" + data
-
-        if test not in data:
-            msg = f"Test '{test}' not found in data '{data}'."
-            raise ValueError(msg)
-
-        if test in self.data:
-            return
-
-        if "customManagers" in self.data:
-            if "packageRules" in self.data:
-                index = self.data.rindex("packageRules")
-                index = self.data.rindex("]", 0, index)
-                self.data = self.data[:index] + data + self.data[index:]
-            else:
-                index = self.data.rindex("]")
-                self.data = self.data[:index] + data + self.data[index:]
-        elif "packageRules" in self.data:
-            index = self.data.rindex("packageRules")
-            self.data = self.data[:index] + f" customManagers: [{data}],\n" + self.data[index:]
-        else:
-            index = self.data.rindex("}")
-            self.data = self.data[:index] + f" customManagers: [{data}],\n" + self.data[index:]
-
-    def add_package_rule(
-        self,
-        data: str | list[Any] | dict[str, Any],
-        test: str,
-        comment: str | None = None,
-    ) -> None:
-        """Add a package rule to the Renovate config."""
-        data = self._clean_data(data)
-        if comment:
-            data = f"/** {comment} */\n" + data
-
-        if test not in data:
-            msg = f"Test '{test}' not found in data '{data}'."
-            raise ValueError(msg)
-
-        if test in self.data:
-            return
-
-        if "packageRules" in self.data:
-            index = self.data.rindex("]")
-            self.data = self.data[:index] + data + self.data[index:]
-        else:
-            index = self.data.rindex("}")
-            self.data = self.data[:index] + f" packageRules: [{data}],\n" + self.data[index:]
-
-
-class JSON5Item:
-    """JSON5 item with comments (abstract class)."""
-
-    def __init__(self) -> None:
-        self.comment: list[str] = []
-
-    def data(self) -> Any:
-        """Return the data, no comments."""
-        raise NotImplementedError
-
-
-class JSON5RowAttribute(JSON5Item):
-    """JSON5 simple attribute (row) with comments."""
-
-    def __init__(self, value: Any = None) -> None:
-        self.value = value
-        super().__init__()
-
-    def data(self) -> Any:
-        """Return the data, no comments."""
-        return self.value
-
-    def __getitem__(self, key: str | int) -> Any:
-        return self.value[key]
-
-    def __setitem__(self, key: str, value: Any) -> None:
-        self.value[key] = value
-
-    def __delitem__(self, key: str) -> None:
-        """Delete the key."""
-        del self.value[key]
-
-    def __contains__(self, key: str) -> bool:
-        """Check if the key is in the data."""
-        return key in self.value
-
-    def __len__(self) -> int:
-        """Return the number of keys."""
-        return len(self.value)
-
-    def get(self, key: str, default: Any = None) -> Any:
-        """Get the value for the key."""
-        return self.value.get(key, default)
-
-    def setdefault(self, key: str, default: Any = None) -> Any:
-        """Set the default value for the key."""
-        return self.value.setdefault(key, default)
-
-    def values(self) -> DictValuesStrAny:
-        """Return the values."""
-        return self.value.values()  # type: ignore[no-any-return]
-
-    def items(self) -> DictItemsStrAny:
-        """Return the items."""
-        return self.value.items()  # type: ignore[no-any-return]
-
-    def pop(self, key: str, default: Any = None) -> Any:
-        """Pop the key."""
-        return self.value.pop(key, default)
-
-    def update(self, other: dict[str, Any], **kwargs: Any) -> None:
-        """Update the data."""
-        self.value.update(other, **kwargs)
-
-    def append(self, value: Any) -> None:
-        """Append a value."""
-        self.value.append(value)
-
-    def extend(self, values: Iterable[Any]) -> None:
-        """Extend the list."""
-        self.value.extend(values)
-
-    def __get_item__(self, key: SupportsIndex | slice) -> Any:
-        return self.value[key]
-
-    def __str__(self) -> str:
-        return str(self.value)
-
-    def __repr__(self) -> str:
-        return repr(self.value)
-
-
-class JSON5RowDict(JSON5RowAttribute):
-    """Dict (row) with comments."""
-
-    def __init__(self, value: dict[str, Any] | None = None) -> None:
-        super().__init__(value if value is not None else {})
-
-    def keys(self) -> DictKeysStrAny:
-        """Return the keys."""
-        return self.value.keys()  # type: ignore[no-any-return]
-
-
-class JSON5RowList(JSON5RowAttribute):
-    """List (row) with comments."""
-
-    def __init__(self, value: list[Any] | None = None) -> None:
-        super().__init__(value if value is not None else [])
-
-    def __iter__(self) -> Iterator[Any]:
-        """Iterate over the item."""
-        return cast("list[Any]", self.value).__iter__()
-
-    def remove(self, value: Any) -> None:
-        """Remove the value."""
-        self.value.remove(value)
-
-
-class JSON5Dict(dict[str, Any], JSON5Item):
-    """JSON5 Dict with comments."""
-
-    children: dict[str, JSON5Item]
-
-    def __init__(self) -> None:
-        dict.__init__(self)
-        JSON5Item.__init__(self)
-        self.children = {}
-
-    def data(self) -> Any:
-        """Return the data, no comments."""
-        return {key: value.data() for key, value in self.children.items()}
-
-    def __getitem__(self, key: str) -> JSON5Item:
-        return self.children[key]
-
-    def __setitem__(self, key: str, value: Any) -> None:
-        attribute: JSON5Item
-        if not isinstance(value, JSON5Item):
-            if isinstance(value, dict):
-                attribute = JSON5RowDict()
-            elif isinstance(value, list):
-                attribute = JSON5RowList()
-            else:
-                self.children[key] = value
-                return
-            attribute.value = value
-        else:
-            attribute = value
-        self.children[key] = attribute
-
-    def __delitem__(self, key: str) -> None:
-        """Delete the key."""
-        del self.children[key]
-
-    def __contains__(self, key: str) -> bool:  # type: ignore[override]
-        """Check if the key is in the data."""
-        return key in self.children
-
-    def __iter__(self) -> Iterator[str]:
-        """Iterate over the keys."""
-        return iter(self.children)
-
-    def __len__(self) -> int:
-        """Return the number of keys."""
-        return len(self.children)
-
-    def get(self, key: str, default: Any = None) -> Any:
-        """Get the value for the key."""
-        return self.children.get(key, default)
-
-    def setdefault(self, key: str, default: Any = None) -> Any:
-        """Set the default value for the key."""
-        attribute: JSON5Item
-        if not isinstance(default, JSON5Item):
-            if isinstance(default, dict):
-                attribute = JSON5RowDict()
-            elif isinstance(default, list):
-                attribute = JSON5RowList()
-            else:
-                attribute = JSON5RowAttribute()
-            attribute.value = default
-        else:
-            attribute = default
-        return self.children.setdefault(key, attribute)
-
-    def keys(self) -> DictKeysStrAny:
-        """Return the keys."""
-        return self.children.keys()
-
-    def values(self) -> DictValuesStrAny:
-        """Return the values."""
-        return self.children.values()
-
-    def items(self) -> DictItemsStrAny:
-        """Return the items."""
-        return self.children.items()
-
-    def pop(self, key: str, default: Any = None) -> Any:
-        """Pop the key."""
-        return self.children.pop(key, default)
-
-    def popitem(self) -> tuple[str, Any]:
-        """Pop an item."""
-        return self.children.popitem()
-
-    def update(self, other: dict[str, Any], **kwargs: Any) -> None:  # type: ignore[override]
-        """Update the data."""
-        self.children.update(other, **kwargs)
-
-
-class JSON5List(JSON5Item, list[Any]):
-    """JSON5 List with comments."""
-
-    children: list[JSON5Item]
-
-    def __init__(self, children: list[Any] | None = None) -> None:
-        super().__init__()
-        self.children = [] if children is None else children
-
-    def data(self) -> Any:
-        """Return the data, no comments."""
-        return [value.data() for value in self.children]
-
-    def __getitem__(self, key: SupportsIndex | slice) -> Any:
-        return self.children[key]
-
-    def __setitem__(self, key: SupportsIndex, value: Any) -> None:  # type: ignore[override]
-        attribute: JSON5Item
-        if not isinstance(value, JSON5Item):
-            if isinstance(value, dict):
-                attribute = JSON5RowDict()
-                attribute.value = value
-            elif isinstance(value, list):
-                attribute = JSON5RowList()
-                attribute.value = value
-            else:
-                attribute = JSON5RowAttribute()
-                attribute.value = value
-        else:
-            attribute = value
-        self.children[key] = attribute
-
-    # Add proxy method of sequence object
-    def __delitem__(self, key: SupportsIndex | slice) -> None:
-        """Delete the key."""
-        del self.children[key]
-
-    def __contains__(self, value: Any) -> bool:
-        """Check if the key is in the data."""
-        return value in self.children
-
-    def __iter__(self) -> Iterator[Any]:
-        """Iterate over the item."""
-        return self.children.__iter__()
-
-    def __len__(self) -> int:
-        """Return the number of keys."""
-        return len(self.children)
-
-    def append(self, value: Any) -> None:
-        """Append a value."""
-        attribute: JSON5Item
-        if not isinstance(value, (JSON5Item, JSON5RowList)):
-            if isinstance(value, dict):
-                attribute = JSON5RowDict()
-                attribute.value = value
-            elif isinstance(value, list):
-                attribute = JSON5RowList()
-                attribute.value = value
-            else:
-                attribute = JSON5RowAttribute()
-                attribute.value = value
-        else:
-            attribute = value
-        self.children.append(attribute)
-
-    def extend(self, values: Iterable[Any]) -> None:
-        """Extend the list."""
-        for value in values:
-            self.append(value)
-
-    def remove(self, value: Any) -> None:
-        """Remove the value."""
-        self.children.remove(value)
-
-    def __str__(self) -> str:
-        return str(self.children)
-
-    def __repr__(self) -> str:
-        return repr(self.children)
 
 
 _DICT_START_RE = re.compile(r"^ +?[\"']?([a-zA-Z0-9-]+)[\"']?: {$")
@@ -1221,9 +901,9 @@ class EditJSON5(_EditDict):
 
         return lines
 
-    def load(self, content: io.TextIOWrapper) -> Any:
+    def load(self, content: str) -> Any:
         """Load the content."""
-        lines = content.read().split("\n")
+        lines = content.split("\n")
 
         assert lines[0] == "{"
         lines = lines[1:]
@@ -1254,7 +934,7 @@ class EditJSON5(_EditDict):
         return result
 
 
-class EditRenovateConfigV2(EditJSON5):
+class EditRenovateConfig(EditJSON5):
     """
     Edit the Renovate config file.
 
@@ -1262,7 +942,9 @@ class EditRenovateConfigV2(EditJSON5):
     packageRules, and just before the customManagers.
     """
 
-    def __init__(self, filename: Path = Path(".github/renovate.json5"), **kwargs: Any) -> None:
+    def __init__(self, filename: Path | None = None, **kwargs: Any) -> None:
+        if filename is None:
+            filename = Path(".github/renovate.json5")
         super().__init__(filename, **kwargs)
 
     def regex_manager_index(self, data: dict[str, Any], comment: list[str] | None = None) -> int | None:
