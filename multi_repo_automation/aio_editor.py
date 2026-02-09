@@ -816,7 +816,8 @@ class JSON5Dict(dict[str, Any], JSON5Item):
     children: dict[str, JSON5Item]
 
     def __init__(self) -> None:
-        super().__init__()
+        dict.__init__(self)
+        JSON5Item.__init__(self)
         self.children = {}
 
     def data(self) -> Any:
