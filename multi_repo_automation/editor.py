@@ -27,7 +27,7 @@ import tomlkit
 from configupdater import ConfigUpdater
 from typing_extensions import Required, Self
 
-from multi_repo_automation.tools import edit, get_pre_commit, run
+from multi_repo_automation.tools import edit, get_pre_commit_run, run
 
 if TYPE_CHECKING:
     from _collections_abc import dict_items, dict_keys, dict_values
@@ -136,8 +136,7 @@ class _Edit:
                             env["SKIP"] = ",".join(skip_hooks)
                             proc = run(
                                 [
-                                    get_pre_commit(),
-                                    "run",
+                                    *get_pre_commit_run(),
                                     "--color=never",
                                     f"--files={self.filename}",
                                     *self.pre_commit_hooks,
@@ -150,7 +149,7 @@ class _Edit:
                                 "1",
                             ):
                                 proc = run(
-                                    [get_pre_commit(), "run", f"--files={self.filename}"],
+                                    [*get_pre_commit_run(), f"--files={self.filename}"],
                                     exit_on_error=False,
                                 )
                                 if proc.returncode != 0:

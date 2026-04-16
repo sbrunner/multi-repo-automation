@@ -36,7 +36,7 @@ from multi_repo_automation.editor import (
     JSON5RowDict,
     JSON5RowList,
 )
-from multi_repo_automation.tools import get_editor, get_pre_commit
+from multi_repo_automation.tools import get_editor, get_pre_commit_run
 
 if TYPE_CHECKING:
     from _collections_abc import dict_items, dict_keys, dict_values
@@ -200,8 +200,7 @@ class _Edit:
                             env["SKIP"] = ",".join(skip_hooks)
                             proc, _, _ = await run(
                                 [
-                                    get_pre_commit(),
-                                    "run",
+                                    *get_pre_commit_run(),
                                     "--color=never",
                                     f"--files={self.filename}",
                                     *self.pre_commit_hooks,
@@ -214,7 +213,7 @@ class _Edit:
                                 "1",
                             ):
                                 proc, _, _ = await run(
-                                    [get_pre_commit(), "run", f"--files={self.filename}"],
+                                    [*get_pre_commit_run(), f"--files={self.filename}"],
                                     exit_on_error=False,
                                 )
                                 if proc.returncode != 0:
