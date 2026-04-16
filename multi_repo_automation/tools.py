@@ -60,11 +60,16 @@ def get_editor() -> str:
     return _EDITOR
 
 
-def get_pre_commit() -> str:
-    """Return 'prek' if it is installed; otherwise return 'pre-commit'."""
+def get_pre_commit() -> list[str]:
+    """Return a pre-commit command using 'prek' if available, else 'pre-commit'."""
     if shutil.which("prek"):
-        return "prek"
-    return "pre-commit"
+        return ["prek"]
+    return ["pre-commit"]
+
+
+def get_pre_commit_run() -> list[str]:
+    """Return pre-commit run command."""
+    return [*get_pre_commit(), "run", "--config=.pre-commit-config.yaml"]
 
 
 def set_editor(editor: str) -> None:
