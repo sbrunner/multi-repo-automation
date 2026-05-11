@@ -1,3 +1,39 @@
+
+[build-system]
+requires = ["poetry-core>=1.0.0", "poetry-dynamic-versioning"]
+build-backend = "poetry.core.masonry.api"
+
+[project]
+dynamic = ["dependencies", "version"]
+name = "multi-repo-automation"
+description = "Library for automation updates on multiple repositories."
+readme = "README.md"
+keywords = ["pre-commit"]
+license = "BSD-2-Clause"
+classifiers = [
+    'Development Status :: 5 - Production/Stable',
+    'Environment :: Console',
+    'License :: OSI Approved :: BSD License',
+    'Operating System :: OS Independent',
+    'Programming Language :: Python',
+    'Programming Language :: Python :: 3',
+    'Programming Language :: Python :: 3.10',
+    'Programming Language :: Python :: 3.11',
+    'Programming Language :: Python :: 3.12',
+    'Programming Language :: Python :: 3.13',
+    'Typing :: Typed',
+]
+authors = [{name = "Stéphane Brunner",email = "stephane.brunner@gmail.com"}]
+requires-python = ">=3.10"
+dependencies = ["PyYAML", "requests", "ruamel.yaml", "identify", "tomlkit", "json5", "configupdater", "security_md", "typing-extensions", "packaging", "urllib3==2.7.0", "anyio"]
+
+[project.urls]
+repository = "https://github.com/sbrunner/multi-repo-automation"
+"Bug Tracker" = "https://github.com/sbrunner/multi-repo-automation/issues"
+
+[project.scripts]
+mra-yaml = "multi_repo_automation.commented_yaml:main"
+
 [tool.ruff]
 target-version = "py310"
 line-length = 110
@@ -58,38 +94,3 @@ format-jinja = """
 
 [tool.poetry-plugin-tweak-dependencies-version]
 default = "present"
-
-[project]
-dynamic = ["dependencies", "version"]
-name = "multi-repo-automation"
-description = "Library for automation updates on multiple repositories."
-readme = "README.md"
-keywords = ["pre-commit"]
-license = "BSD-2-Clause"
-classifiers = [
-    'Development Status :: 5 - Production/Stable',
-    'Environment :: Console',
-    'License :: OSI Approved :: BSD License',
-    'Operating System :: OS Independent',
-    'Programming Language :: Python',
-    'Programming Language :: Python :: 3',
-    'Programming Language :: Python :: 3.10',
-    'Programming Language :: Python :: 3.11',
-    'Programming Language :: Python :: 3.12',
-    'Programming Language :: Python :: 3.13',
-    'Typing :: Typed',
-]
-authors = [{name = "Stéphane Brunner",email = "stephane.brunner@gmail.com"}]
-requires-python = ">=3.10"
-dependencies = ["PyYAML", "requests", "ruamel.yaml", "identify", "tomlkit", "json5", "configupdater", "security_md", "typing-extensions", "packaging", "urllib3==2.6.3", "anyio"]
-
-[project.urls]
-repository = "https://github.com/sbrunner/multi-repo-automation"
-"Bug Tracker" = "https://github.com/sbrunner/multi-repo-automation/issues"
-
-[project.scripts]
-mra-yaml = "multi_repo_automation.commented_yaml:main"
-
-[build-system]
-requires = ["poetry-core>=1.0.0", "poetry-dynamic-versioning"]
-build-backend = "poetry.core.masonry.api"
