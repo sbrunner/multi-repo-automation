@@ -25,7 +25,7 @@ classifiers = [
 ]
 authors = [{name = "Stéphane Brunner",email = "stephane.brunner@gmail.com"}]
 requires-python = ">=3.10"
-dependencies = ["PyYAML", "requests", "ruamel.yaml", "identify", "tomlkit", "json5", "configupdater", "security_md", "typing-extensions", "packaging", "urllib3==2.7.0", "anyio"]
+dependencies = ["PyYAML", "requests", "ruamel.yaml", "identify", "tomlkit", "json5", "configupdater", "security_md", "typing-extensions", "packaging", "anyio"]
 
 [project.urls]
 repository = "https://github.com/sbrunner/multi-repo-automation"
