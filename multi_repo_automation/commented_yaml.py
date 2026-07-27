@@ -1,3 +1,4 @@
+# Copyright (c) 2023-2026, Stéphane Brunner
 """Convert YAML to Python, with comment (for ruamel)."""
 
 import argparse
