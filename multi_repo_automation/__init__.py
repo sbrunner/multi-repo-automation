@@ -1,3 +1,4 @@
+# Copyright (c) 2023-2026, Stéphane Brunner
 """Tools to automated changes on multiple repositories."""
 
 import argparse

@@ -1,3 +1,4 @@
+# Copyright (c) 2023-2026, Stéphane Brunner
 """Some utility functions."""
 
 import json
