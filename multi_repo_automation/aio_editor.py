@@ -638,10 +638,13 @@ class EditPreCommitConfig(EditYAML):
         files_joined = "\n  |".join(files)
         start = "^" if add_start_end else ""
         end = "$" if add_start_end else ""
-        return ruamel.yaml.scalarstring.LiteralScalarString(
-            f"""(?x){start}(
+        return cast(
+            str,
+            ruamel.yaml.scalarstring.LiteralScalarString(
+                f"""(?x){start}(
   {files_joined}
 ){end}""",
+            ),
         )
 
     def skip_ci(self, hook_id: str) -> None:
