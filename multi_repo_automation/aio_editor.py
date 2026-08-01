@@ -639,7 +639,7 @@ class EditPreCommitConfig(EditYAML):
         start = "^" if add_start_end else ""
         end = "$" if add_start_end else ""
         return cast(
-            str,
+            "str",
             ruamel.yaml.scalarstring.LiteralScalarString(
                 f"""(?x){start}(
   {files_joined}
