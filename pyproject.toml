@@ -34,7 +34,7 @@ packaging = "26.2"
 anyio = "4.14.2"
 
 [tool.poetry.group.dev.dependencies]
-prospector = { version = "1.19.0", extras = ["with_bandit", "with_mypy", "with_pyroma", "with_ruff"] }
+prospector = { version = "1.19.1", extras = ["with_bandit", "with_mypy", "with_pyroma", "with_ruff"] }
 types-PyYAML = "6.0.12.20260724"
 types-requests = "2.33.0.20260712"
 prospector-profile-duplicated = "1.12.0"
