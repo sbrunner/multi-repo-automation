@@ -25,18 +25,18 @@ PyYAML = "6.0.3"
 requests = "2.34.2"
 "ruamel.yaml" = "0.19.1"
 identify = "2.6.19"
-tomlkit = "0.15.0"
+tomlkit = "0.15.1"
 json5 = "0.15.0"
 configupdater = "3.2"
 security_md = "1.0.0"
-typing-extensions = "4.15.0"
+typing-extensions = "4.16.0"
 packaging = "26.2"
-anyio = "4.14.0"
+anyio = "4.14.2"
 
 [tool.poetry.group.dev.dependencies]
 prospector = { version = "1.19.0", extras = ["with_bandit", "with_mypy", "with_pyroma", "with_ruff"] }
-types-PyYAML = "6.0.12.20260518"
-types-requests = "2.33.0.20260518"
+types-PyYAML = "6.0.12.20260724"
+types-requests = "2.33.0.20260712"
 prospector-profile-duplicated = "1.12.0"
 prospector-profile-utils = "1.27.0"
 
@@ -91,5 +91,5 @@ repository = "https://github.com/sbrunner/multi-repo-automation"
 mra-yaml = "multi_repo_automation.commented_yaml:main"
 
 [build-system]
-requires = ["poetry-core==2.4.0", "poetry-dynamic-versioning==1.10.0"]
+requires = ["poetry-core==2.4.1", "poetry-dynamic-versioning==1.10.0"]
 build-backend = "poetry.core.masonry.api"
