@@ -638,11 +638,12 @@ class EditPreCommitConfig(EditYAML):
         files_joined = "\n  |".join(files)
         start = "^" if add_start_end else ""
         end = "$" if add_start_end else ""
-        return ruamel.yaml.scalarstring.LiteralScalarString(  # type: ignore[no-any-return]
+        result: str = ruamel.yaml.scalarstring.LiteralScalarString(
             f"""(?x){start}(
   {files_joined}
 ){end}""",
         )
+        return result
 
     def skip_ci(self, hook_id: str) -> None:
         """Add hook in the list that will be ignore by pre-commit.ci."""

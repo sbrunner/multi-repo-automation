@@ -49,14 +49,14 @@ def folder_scalar_string(value: list[str]) -> ruamel.yaml.scalarstring.FoldedSca
       test1
       test2
     """
-    result = ruamel.yaml.scalarstring.FoldedScalarString(" ".join(value))
+    result: ruamel.yaml.scalarstring.FoldedScalarString = ruamel.yaml.scalarstring.FoldedScalarString(" ".join(value))
     result.fold_pos = []
     pos = -1
     for line in value:
         if pos >= 0:
             result.fold_pos.append(pos)
         pos += len(line) + 1
-    return result  # type: ignore[no-any-return]
+    return result
 
 
 def get_python(value: Any, prefix: str = "") -> str:
