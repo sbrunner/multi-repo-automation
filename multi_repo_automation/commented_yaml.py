@@ -56,7 +56,7 @@ def folder_scalar_string(value: list[str]) -> ruamel.yaml.scalarstring.FoldedSca
         if pos >= 0:
             result.fold_pos.append(pos)
         pos += len(line) + 1
-    return result  # type: ignore[return-value]
+    return result  # type: ignore[no-any-return]
 
 
 def get_python(value: Any, prefix: str = "") -> str:
