@@ -562,7 +562,7 @@ class EditPreCommitConfig(EditYAML):
         files_joined = "\n  |".join(files)
         start = "^" if add_start_end else ""
         end = "$" if add_start_end else ""
-        result: str = ruamel.yaml.scalarstring.LiteralScalarString(
+        result: ruamel.yaml.scalarstring.LiteralScalarString = ruamel.yaml.scalarstring.LiteralScalarString(
             f"""(?x){start}(
   {files_joined}
 ){end}""",
