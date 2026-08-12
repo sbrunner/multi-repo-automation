@@ -49,7 +49,9 @@ def folder_scalar_string(value: list[str]) -> ruamel.yaml.scalarstring.FoldedSca
       test1
       test2
     """
-    result = ruamel.yaml.scalarstring.FoldedScalarString(" ".join(value))
+    result: ruamel.yaml.scalarstring.FoldedScalarString = ruamel.yaml.scalarstring.FoldedScalarString(
+        " ".join(value)
+    )
     result.fold_pos = []  # type: ignore[attr-defined]
     pos = -1
     for line in value:
