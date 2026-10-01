@@ -64,29 +64,29 @@ mra.edit(["file"])
 ### Edit file programmatically
 
 ```python
-   with mra.Edit('my-file.txt') as edit:
-      edit.content = edit.content.replace('<from>', '<to>')
+with mra.Edit("my-file.txt") as edit:
+    edit.content = edit.content.replace("<from>", "<to>")
 ```
 
 ### Edit YAML file programmatically
 
 ```python
-   with mra.EditYAML('my-file.yaml') as edit:
-      edit.setdefault('dict', {})['prop'] = 'value'
+with mra.EditYAML("my-file.yaml") as edit:
+    edit.setdefault("dict", {})["prop"] = "value"
 ```
 
 ### Edit TOML file programmatically
 
 ```python
-   with mra.EditTOML('my-file.toml') as edit:
-      edit.setdefault('dict', {})['prop'] = 'value'
+with mra.EditTOML("my-file.toml") as edit:
+    edit.setdefault("dict", {})["prop"] = "value"
 ```
 
 ### Edit Config file programmatically
 
 ```python
-   with mra.EditConfigL('my-file.ini') as edit:
-      edit.setdefault('dict', {})['prop'] = 'value'
+with mra.EditConfigL("my-file.ini") as edit:
+    edit.setdefault("dict", {})["prop"] = "value"
 ```
 
 ## Contributing
