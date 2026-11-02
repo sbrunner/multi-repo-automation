@@ -34,13 +34,13 @@ packaging = "26.3"
 anyio = "4.15.1"
 
 [tool.poetry.group.dev.dependencies]
-prospector = { version = "1.19.1", extras = ["with_bandit", "with_mypy", "with_pyroma", "with_ruff"] }
+prospector = { version = "1.20.0", extras = ["with_bandit", "with_mypy", "with_pyroma", "with_ruff"] }
 types-PyYAML = "6.0.12.20260906"
 types-requests = "2.33.0.20261006"
 prospector-profile-duplicated = "1.12.0"
 prospector-profile-utils = "1.27.0"
-ruff = "0.16.9"
-pylint = "4.0.9"
+ruff = "0.17.2"
+pylint = "4.1.3"
 
 [tool.poetry-dynamic-versioning]
 enable = true
