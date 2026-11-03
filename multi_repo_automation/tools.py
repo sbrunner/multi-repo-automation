@@ -8,10 +8,9 @@ import shutil
 import subprocess  # nosec
 import sys
 from pathlib import Path
-from typing import Any, TypedDict, cast
+from typing import Any, Required, TypedDict, cast
 
 import yaml
-from typing_extensions import Required
 
 
 class HookDefinition(TypedDict, total=False):
