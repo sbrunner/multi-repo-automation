@@ -17,6 +17,8 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Literal,
+    Required,
+    Self,
     TypedDict,
     cast,
 )
@@ -27,7 +29,6 @@ import ruamel.yaml.scalarstring
 import tomlkit
 from anyio import Path
 from configupdater import ConfigUpdater
-from typing_extensions import Required, Self
 
 from multi_repo_automation.editor import (
     JSON5Dict,
@@ -88,7 +89,7 @@ async def run(
 
     try:
         stdout_data, stderr_data = await asyncio.wait_for(proc.communicate(), timeout=timeout_value)
-    except asyncio.TimeoutError:
+    except TimeoutError:
         proc.kill()
         await proc.wait()
         raise
@@ -219,7 +220,7 @@ class _Edit:
                                 )
                                 if proc.returncode != 0:
                                     await edit([self.filename])
-                        except (asyncio.TimeoutError, subprocess.TimeoutExpired) as exc:
+                        except (TimeoutError, subprocess.TimeoutExpired) as exc:
                             print(exc)
         return False
 

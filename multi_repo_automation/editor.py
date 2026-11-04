@@ -16,6 +16,8 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Literal,
+    Required,
+    Self,
     SupportsIndex,
     TypedDict,
     cast,
@@ -26,7 +28,6 @@ import ruamel.yaml.comments
 import ruamel.yaml.scalarstring
 import tomlkit
 from configupdater import ConfigUpdater
-from typing_extensions import Required, Self
 
 from multi_repo_automation.tools import edit, get_pre_commit_run, run
 
