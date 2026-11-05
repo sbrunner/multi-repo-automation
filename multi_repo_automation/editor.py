@@ -411,7 +411,9 @@ class EditConfig(_EditDict):
         filename: Path,
         **kwargs: Any,
     ) -> None:
-        self.updater = ConfigUpdater()
+        # ConfigUpdater is concrete at runtime; pylint misinfers abstract methods
+        # from the Document/MutableMapping generic bases of configupdater >= 4.0.
+        self.updater = ConfigUpdater()  # pylint: disable=abstract-class-instantiated
         super().__init__(filename, **kwargs)
 
     def load(self, content: io.TextIOWrapper) -> Any:
